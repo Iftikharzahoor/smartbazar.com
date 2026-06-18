@@ -1108,7 +1108,12 @@ const seedDB = async () => {
       }
     ];
 
-    const seededProducts = await Product.create(productsData);
+    // Assign incremental distinct createdAt timestamps so they sort sequentially
+    const productsWithTimestamps = productsData.map((p, idx) => ({
+      ...p,
+      createdAt: new Date(Date.now() - (productsData.length - idx) * 1000)
+    }));
+    const seededProducts = await Product.create(productsWithTimestamps);
     console.log('Products seeded.');
 
     // 5. Seed Coupons

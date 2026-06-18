@@ -43,12 +43,12 @@ class ApiFeatures {
   // 3. Sorting Options
   sort() {
     if (this.queryStr.sort) {
-      // e.g. sort=price,-createdAt -> 'price -createdAt'
-      const sortBy = this.queryStr.sort.split(',').join(' ');
+      // e.g. sort=price,-createdAt -> 'price -createdAt _id'
+      const sortBy = this.queryStr.sort.split(',').join(' ') + ' _id';
       this.query = this.query.sort(sortBy);
     } else {
       // Default: show newest first
-      this.query = this.query.sort('-createdAt');
+      this.query = this.query.sort('-createdAt _id');
     }
     return this;
   }
