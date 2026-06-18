@@ -35,7 +35,6 @@ const AIChatWidget = () => {
     setLoading(true);
 
     try {
-      // Send chat history to backend API
       const response = await api.post('/chat', {
         messages: [...messages, userMessage]
       });
@@ -52,6 +51,63 @@ const AIChatWidget = () => {
     }
   };
 
+  // Helper to parse product tokens and render custom cards with images
+  const renderMessageContent = (text) => {
+    const regex = /\[PRODUCT:\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\]/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = regex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(
+          <p key={`text-${lastIndex}`} className="whitespace-pre-line leading-relaxed">
+            {text.substring(lastIndex, match.index)}
+          </p>
+        );
+      }
+
+      const [_, name, price, imageUrl, slug] = match;
+      parts.push(
+        <div key={`prod-${match.index}`} className="my-3 bg-slate-900 border border-slate-800/80 rounded-2xl overflow-hidden hover:border-indigo-500/40 transition-all shadow-md group max-w-[280px] sm:max-w-xs">
+          <img
+            src={imageUrl || 'https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=600&q=80'}
+            alt={name}
+            className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none"
+          />
+          <div className="p-3 text-left space-y-1.5">
+            <h5 className="font-bold text-xs text-white line-clamp-2">{name}</h5>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-black text-indigo-400">${price}</span>
+              <a
+                href={`/products/${slug}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.location.href = `/products/${slug}`;
+                }}
+                className="text-[10px] bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+              >
+                View Details
+              </a>
+            </div>
+          </div>
+        </div>
+      );
+
+      lastIndex = regex.lastIndex;
+    }
+
+    if (lastIndex < text.length) {
+      parts.push(
+        <p key={`text-${lastIndex}`} className="whitespace-pre-line leading-relaxed">
+          {text.substring(lastIndex)}
+        </p>
+      );
+    }
+
+    return parts.length > 0 ? parts : <p className="whitespace-pre-line leading-relaxed">{text}</p>;
+  };
+
   return (
     <div className="fixed bottom-6 right-6 z-50 font-sans select-none">
       <AnimatePresence>
@@ -60,7 +116,7 @@ const AIChatWidget = () => {
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.9 }}
-            className="bg-slate-950/80 border border-slate-800/80 backdrop-blur-xl w-80 sm:w-96 h-[480px] rounded-3xl shadow-2xl flex flex-col overflow-hidden mb-4"
+            className="bg-slate-955/80 border border-slate-800/80 backdrop-blur-xl w-80 sm:w-96 h-[480px] rounded-3xl shadow-2xl flex flex-col overflow-hidden mb-4"
           >
             {/* Header */}
             <div className="bg-gradient-to-r from-indigo-600/90 to-purple-600/90 p-4 flex items-center justify-between border-b border-indigo-500/20 text-white">
@@ -82,27 +138,31 @@ const AIChatWidget = () => {
             </div>
 
             {/* Chat Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-slate-800">
+            <div className="flex-grow overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-slate-800">
               {messages.map((msg, index) => (
                 <div
                   key={index}
                   className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm text-left ${
+                    className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm text-left ${
                       msg.sender === 'user'
                         ? 'bg-indigo-600 text-white rounded-tr-none shadow-md'
-                        : 'bg-slate-900 border border-slate-800 text-slate-200 rounded-tl-none'
-                    } whitespace-pre-line`}
+                        : 'bg-slate-950 border border-slate-800/80 text-slate-200 rounded-tl-none'
+                    }`}
                   >
-                    {msg.text}
+                    {msg.sender === 'user' ? (
+                      <p className="whitespace-pre-line leading-relaxed">{msg.text}</p>
+                    ) : (
+                      renderMessageContent(msg.text)
+                    )}
                   </div>
                 </div>
               ))}
 
               {loading && (
                 <div className="flex justify-start">
-                  <div className="bg-slate-900 border border-slate-800 rounded-2xl rounded-tl-none px-4 py-3 text-slate-400 text-xs flex items-center gap-2">
+                  <div className="bg-slate-950 border border-slate-800/80 rounded-2xl rounded-tl-none px-4 py-3 text-slate-400 text-xs flex items-center gap-2">
                     <Loader className="w-3.5 h-3.5 animate-spin text-indigo-400" />
                     <span>Typing response...</span>
                   </div>
@@ -118,7 +178,7 @@ const AIChatWidget = () => {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask SmartBazar AI..."
-                className="flex-1 bg-slate-900 border border-slate-800 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/35 transition-all placeholder-slate-500"
+                className="flex-grow bg-slate-900 border border-slate-800 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/35 transition-all placeholder-slate-500"
               />
               <button
                 type="submit"

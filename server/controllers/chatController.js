@@ -7,35 +7,48 @@ export const handleChat = async (req, res, next) => {
       return res.status(400).json({ success: false, error: 'Please provide message history' });
     }
 
-    // 1. Fetch active products to ground the AI with real store details
-    const products = await Product.find({ isActive: true }).select('name price brand slug').populate('category', 'name');
+    // 1. Fetch active products with images to ground the AI with rich media details
+    const products = await Product.find({ isActive: true }).select('name price brand slug images').populate('category', 'name');
     
-    // Format product lists for prompt injection
-    const productSummary = products.map(p => 
-      `- Name: ${p.name}, Price: $${p.price}, Category: ${p.category?.name || 'Uncategorized'}, Brand: ${p.brand}, Link: /products/slug/${p.slug}`
-    ).join('\n');
+    // Format product lists for prompt injection, including image URLs
+    const productSummary = products.map(p => {
+      const imgUrl = p.images?.[0]?.url || '';
+      return `- Name: ${p.name}, Price: $${p.price}, Category: ${p.category?.name || 'Uncategorized'}, Brand: ${p.brand}, Image: ${imgUrl}, Slug: ${p.slug}`;
+    }).join('\n');
 
     const geminiKey = process.env.GEMINI_API_KEY;
 
     if (!geminiKey) {
       console.warn('GEMINI_API_KEY not configured. Falling back to rule-based auto-helper.');
       const userText = messages[messages.length - 1]?.text || '';
-      const matched = products.filter(p => p.name.toLowerCase().includes(userText.toLowerCase()) || p.brand.toLowerCase().includes(userText.toLowerCase())).slice(0, 3);
+      
+      // Look for matches in product name, brand, or category
+      const matched = products.filter(p => 
+        p.name.toLowerCase().includes(userText.toLowerCase()) || 
+        p.brand.toLowerCase().includes(userText.toLowerCase()) ||
+        p.category?.name.toLowerCase().includes(userText.toLowerCase())
+      ).slice(0, 3);
       
       let reply = "I'm SmartBazar's virtual assistant! To unlock my advanced AI features, please ask the admin to configure GEMINI_API_KEY in the environment.";
       if (matched.length > 0) {
-        reply += `\n\nBased on your query, here are some products you might like:\n` + matched.map(p => `* **${p.name}** ($${p.price})`).join('\n');
+        reply += `\n\nBased on your query, here are some products with their pictures:\n`;
+        matched.forEach(p => {
+          const img = p.images?.[0]?.url || '';
+          reply += `\n[PRODUCT: ${p.name} | ${p.price} | ${img} | ${p.slug}]`;
+        });
       } else {
         reply += `\n\nHow can I help you today? You can ask me about our Electronics, Fashion, Home, or Beauty products. (Try checking out our 'SAM10' coupon code for a 10% discount!)`;
       }
       return res.status(200).json({ success: true, reply });
     }
 
-    // Prepare system instructions for e-commerce grounding
+    // Prepare system instructions for e-commerce grounding with token commands
     const systemPrompt = `You are "SmartBazar Assistant", a helpful, friendly AI shopping assistant.
 Your goal is to guide customers and recommend products from the list below.
-You must only recommend products that exist in the catalog.
-Always include the product price and direct the user to their catalog links if they are interested.
+For EVERY product you recommend or mention, you MUST append this exact product card token at the end of your recommendation:
+[PRODUCT: Name | Price | Image URL | Slug]
+Example: if you recommend the headphones, write: "I highly recommend the SoundAura ANC Headphones ($299.99). [PRODUCT: SoundAura ANC Headphones | 299.99 | https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80 | soundaura-anc-headphones]"
+Always use the exact image URL listed under the product. Do not invent or change image URLs.
 Keep responses concise, clear, and helpful.
 
 Available products in SmartBazar:
@@ -53,7 +66,7 @@ If they ask for promo codes or discounts, remind them that they can use 'SAM10' 
     });
     contents.push({
       role: 'model',
-      parts: [{ text: "Understood. I am now configured as the SmartBazar AI assistant. I will only recommend available items from the store. How can I help the customer today?" }]
+      parts: [{ text: "Understood. I am now configured as the SmartBazar AI assistant. I will only recommend available items from the store using the requested [PRODUCT: Name | Price | Image | Slug] format. How can I help the customer today?" }]
     });
 
     // Append user message history
