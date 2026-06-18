@@ -1,18 +1,30 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import { v2 as cloudinary } from 'cloudinary';
 
 // Ensure local upload directories exist for fallback
 const localUploadDir = path.join(process.cwd(), 'public', 'uploads');
-if (!fs.existsSync(localUploadDir)) {
-  fs.mkdirSync(localUploadDir, { recursive: true });
+let uploadDir = localUploadDir;
+
+if (process.env.VERCEL) {
+  uploadDir = os.tmpdir();
+} else {
+  try {
+    if (!fs.existsSync(localUploadDir)) {
+      fs.mkdirSync(localUploadDir, { recursive: true });
+    }
+  } catch (err) {
+    console.warn('Could not create local upload directory, falling back to temp dir:', err.message);
+    uploadDir = os.tmpdir();
+  }
 }
 
 // Multer storage engine - temporary storage before Cloudinary/Fallback
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, localUploadDir);
+    cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
