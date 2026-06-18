@@ -18,6 +18,7 @@ import paymentRoutes from './routes/paymentRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
 import cartRoutes from './routes/cartRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import chatRoutes from './routes/chatRoutes.js';
 
 const app = express();
 
@@ -61,6 +62,7 @@ app.use('/api/v1/payment', paymentRoutes);
 app.use('/api/v1/categories', categoryRoutes);
 app.use('/api/v1/cart', cartRoutes);
 app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/chat', chatRoutes);
 
 // Root route check
 app.get('/', (req, res) => {

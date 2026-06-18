@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar.jsx';
 import Footer from './components/Footer.jsx';
+import AIChatWidget from './components/AIChatWidget.jsx';
 
 // Core Pages
 import Home from './pages/Home.jsx';
@@ -108,6 +109,7 @@ function App() {
         </Routes>
       </main>
       <Footer />
+      <AIChatWidget />
     </div>
   );
 }
