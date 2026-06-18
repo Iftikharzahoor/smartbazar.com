@@ -1,0 +1,16 @@
+{
+  "name": "shopmern",
+  "version": "1.0.0",
+  "description": "Premium Full-Stack MERN E-Commerce Platform",
+  "main": "server/server.js",
+  "scripts": {
+    "install-all": "npm install && cd server && npm install && cd ../client && npm install",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm run dev",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "seed": "cd server && npm run seed"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}

@@ -1,0 +1,13 @@
+node_modules/
+client/node_modules/
+server/node_modules/
+client/dist/
+.vercel/
+client/.vercel/
+.env
+.env*.local
+mongodb.log*
+mongodb_data/
+*.rar
+*.zip
+*.log
