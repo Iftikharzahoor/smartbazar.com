@@ -22,7 +22,8 @@ const categoriesData = [
 
 const couponsData = [
   { code: 'SAVE10', discountType: 'percent', discountAmount: 10, expiryDate: new Date('2030-12-31') },
-  { code: 'WELCOME50', discountType: 'fixed', discountAmount: 50, expiryDate: new Date('2030-12-31') }
+  { code: 'WELCOME50', discountType: 'fixed', discountAmount: 50, expiryDate: new Date('2030-12-31') },
+  { code: 'SAM10', discountType: 'percent', discountAmount: 10, expiryDate: new Date('2030-12-31') }
 ];
 
 const seedDB = async () => {
@@ -1131,32 +1132,73 @@ const seedDB = async () => {
       avatar: '/user_photo.png'
     });
 
-    // Test Customer User Account
-    const customerUser = await User.create({
-      name: 'John Doe',
-      email: 'customer@shopmern.com',
+    // Test Customer User Account (Fatima)
+    const fatimaUser = await User.create({
+      name: 'Fatima',
+      email: 'fatima@shopmern.com',
       password: 'customer12345', // Bcrypt pre-save hashes this automatically
       role: 'user',
       isVerified: true,
       avatar: 'https://res.cloudinary.com/mock-cloudinary/image/upload/v1/avatars/customer.png',
-      phone: '+1 555-0199',
+      phone: '+92 300-1234567',
       addresses: [
         {
-          street: '123 E-Commerce Way',
-          city: 'Tech City',
-          state: 'California',
-          postalCode: '90210',
-          country: 'United States',
+          street: 'House 123, Sector F-11',
+          city: 'Islamabad',
+          state: 'Federal',
+          postalCode: '44000',
+          country: 'Pakistan',
           isDefault: true
         }
       ]
     });
+
+    const aliUser = await User.create({
+      name: 'Ali Khan',
+      email: 'ali@shopmern.com',
+      password: 'customer12345',
+      role: 'user',
+      isVerified: true,
+      avatar: 'https://res.cloudinary.com/mock-cloudinary/image/upload/v1/avatars/customer.png',
+      phone: '+92 321-7654321',
+      addresses: [
+        {
+          street: 'Block 4, Gulshan-e-Iqbal',
+          city: 'Karachi',
+          state: 'Sindh',
+          postalCode: '75300',
+          country: 'Pakistan',
+          isDefault: true
+        }
+      ]
+    });
+
+    const ayeshaUser = await User.create({
+      name: 'Ayesha Ahmed',
+      email: 'ayesha@shopmern.com',
+      password: 'customer12345',
+      role: 'user',
+      isVerified: true,
+      avatar: 'https://res.cloudinary.com/mock-cloudinary/image/upload/v1/avatars/customer.png',
+      phone: '+92 333-9876543',
+      addresses: [
+        {
+          street: 'Phase 5, DHA',
+          city: 'Lahore',
+          state: 'Punjab',
+          postalCode: '54000',
+          country: 'Pakistan',
+          isDefault: true
+        }
+      ]
+    });
+
     console.log('Admin and Customer accounts seeded successfully.');
 
-    // 7. Seed Orders
+    // 7. Seed Orders (Exactly 10 orders)
     const ordersData = [
       {
-        user: customerUser._id,
+        user: fatimaUser._id,
         orderItems: [
           {
             name: seededProducts[0].name,
@@ -1173,13 +1215,7 @@ const seedDB = async () => {
             product: seededProducts[1]._id
           }
         ],
-        shippingAddress: {
-          street: '123 E-Commerce Way',
-          city: 'Tech City',
-          state: 'California',
-          postalCode: '90210',
-          country: 'United States'
-        },
+        shippingAddress: fatimaUser.addresses[0],
         paymentMethod: 'stripe',
         itemsPrice: seededProducts[0].price + (seededProducts[1].price * 2),
         taxPrice: 15.00,
@@ -1191,30 +1227,196 @@ const seedDB = async () => {
         status: 'processing'
       },
       {
-        user: customerUser._id,
+        user: fatimaUser._id,
         orderItems: [
           {
             name: seededProducts[2].name,
             qty: 1,
             image: seededProducts[2].images[0].url,
             price: seededProducts[2].price,
-            product: seededProducts[2]._id,
-            size: 'L',
-            color: 'Indigo Blue'
+            product: seededProducts[2]._id
           }
         ],
-        shippingAddress: {
-          street: '123 E-Commerce Way',
-          city: 'Tech City',
-          state: 'California',
-          postalCode: '90210',
-          country: 'United States'
-        },
+        shippingAddress: fatimaUser.addresses[0],
         paymentMethod: 'cod',
         itemsPrice: seededProducts[2].price,
         taxPrice: 5.00,
         shippingPrice: 5.00,
         totalPrice: seededProducts[2].price + 10.00,
+        isPaid: false,
+        isDelivered: false,
+        status: 'pending'
+      },
+      {
+        user: aliUser._id,
+        orderItems: [
+          {
+            name: seededProducts[14].name,
+            qty: 1,
+            image: seededProducts[14].images[0].url,
+            price: seededProducts[14].price,
+            product: seededProducts[14]._id
+          }
+        ],
+        shippingAddress: aliUser.addresses[0],
+        paymentMethod: 'cod',
+        itemsPrice: seededProducts[14].price,
+        taxPrice: 3.50,
+        shippingPrice: 5.00,
+        totalPrice: seededProducts[14].price + 8.50,
+        isPaid: false,
+        isDelivered: false,
+        status: 'pending'
+      },
+      {
+        user: ayeshaUser._id,
+        orderItems: [
+          {
+            name: seededProducts[20].name,
+            qty: 1,
+            image: seededProducts[20].images[0].url,
+            price: seededProducts[20].price,
+            product: seededProducts[20]._id
+          }
+        ],
+        shippingAddress: ayeshaUser.addresses[0],
+        paymentMethod: 'stripe',
+        itemsPrice: seededProducts[20].price,
+        taxPrice: 18.00,
+        shippingPrice: 12.00,
+        totalPrice: seededProducts[20].price + 30.00,
+        isPaid: true,
+        paidAt: new Date(),
+        isDelivered: true,
+        deliveredAt: new Date(),
+        status: 'delivered'
+      },
+      {
+        user: fatimaUser._id,
+        orderItems: [
+          {
+            name: seededProducts[40].name,
+            qty: 1,
+            image: seededProducts[40].images[0].url,
+            price: seededProducts[40].price,
+            product: seededProducts[40]._id
+          }
+        ],
+        shippingAddress: fatimaUser.addresses[0],
+        paymentMethod: 'stripe',
+        itemsPrice: seededProducts[40].price,
+        taxPrice: 40.00,
+        shippingPrice: 25.00,
+        totalPrice: seededProducts[40].price + 65.00,
+        isPaid: true,
+        paidAt: new Date(),
+        isDelivered: false,
+        status: 'processing'
+      },
+      {
+        user: aliUser._id,
+        orderItems: [
+          {
+            name: seededProducts[60].name,
+            qty: 3,
+            image: seededProducts[60].images[0].url,
+            price: seededProducts[60].price,
+            product: seededProducts[60]._id
+          }
+        ],
+        shippingAddress: aliUser.addresses[0],
+        paymentMethod: 'cod',
+        itemsPrice: seededProducts[60].price * 3,
+        taxPrice: 15.00,
+        shippingPrice: 5.00,
+        totalPrice: (seededProducts[60].price * 3) + 20.00,
+        isPaid: false,
+        isDelivered: false,
+        status: 'pending'
+      },
+      {
+        user: ayeshaUser._id,
+        orderItems: [
+          {
+            name: seededProducts[18].name,
+            qty: 1,
+            image: seededProducts[18].images[0].url,
+            price: seededProducts[18].price,
+            product: seededProducts[18]._id
+          }
+        ],
+        shippingAddress: ayeshaUser.addresses[0],
+        paymentMethod: 'stripe',
+        itemsPrice: seededProducts[18].price,
+        taxPrice: 8.00,
+        shippingPrice: 5.00,
+        totalPrice: seededProducts[18].price + 13.00,
+        isPaid: true,
+        paidAt: new Date(),
+        isDelivered: false,
+        status: 'shipped'
+      },
+      {
+        user: fatimaUser._id,
+        orderItems: [
+          {
+            name: seededProducts[21].name,
+            qty: 2,
+            image: seededProducts[21].images[0].url,
+            price: seededProducts[21].price,
+            product: seededProducts[21]._id
+          }
+        ],
+        shippingAddress: fatimaUser.addresses[0],
+        paymentMethod: 'cod',
+        itemsPrice: seededProducts[21].price * 2,
+        taxPrice: 10.00,
+        shippingPrice: 5.00,
+        totalPrice: (seededProducts[21].price * 2) + 15.00,
+        isPaid: false,
+        isDelivered: false,
+        status: 'pending'
+      },
+      {
+        user: aliUser._id,
+        orderItems: [
+          {
+            name: seededProducts[45].name,
+            qty: 1,
+            image: seededProducts[45].images[0].url,
+            price: seededProducts[45].price,
+            product: seededProducts[45]._id
+          }
+        ],
+        shippingAddress: aliUser.addresses[0],
+        paymentMethod: 'stripe',
+        itemsPrice: seededProducts[45].price,
+        taxPrice: 20.00,
+        shippingPrice: 15.00,
+        totalPrice: seededProducts[45].price + 35.00,
+        isPaid: true,
+        paidAt: new Date(),
+        isDelivered: true,
+        deliveredAt: new Date(),
+        status: 'delivered'
+      },
+      {
+        user: ayeshaUser._id,
+        orderItems: [
+          {
+            name: seededProducts[64].name,
+            qty: 1,
+            image: seededProducts[64].images[0].url,
+            price: seededProducts[64].price,
+            product: seededProducts[64]._id
+          }
+        ],
+        shippingAddress: ayeshaUser.addresses[0],
+        paymentMethod: 'cod',
+        itemsPrice: seededProducts[64].price,
+        taxPrice: 3.50,
+        shippingPrice: 5.00,
+        totalPrice: seededProducts[64].price + 8.50,
         isPaid: false,
         isDelivered: false,
         status: 'pending'
