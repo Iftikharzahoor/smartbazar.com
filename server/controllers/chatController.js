@@ -20,8 +20,16 @@ export const handleChat = async (req, res, next) => {
 
     if (!geminiKey) {
       console.warn('GEMINI_API_KEY not configured. Falling back to rule-based auto-helper.');
-      const userText = messages[messages.length - 1]?.text || '';
+      const userText = (messages[messages.length - 1]?.text || '').trim();
       
+      const greetings = ['hi', 'hye', 'hello', 'hey', 'yo', 'halo', 'assalam', 'aoa', 'hola', 'hy'];
+      const isGreeting = greetings.includes(userText.toLowerCase()) || userText.length < 3;
+
+      if (isGreeting) {
+        const reply = "Hello! How can I help you today? You can ask me about our Electronics, Fashion, Home & Living, or Beauty products. (Try checking out our 'SAM10' coupon code for a 10% discount!)";
+        return res.status(200).json({ success: true, reply });
+      }
+
       // Look for matches in product name, brand, or category
       const matched = products.filter(p => 
         p.name.toLowerCase().includes(userText.toLowerCase()) || 
