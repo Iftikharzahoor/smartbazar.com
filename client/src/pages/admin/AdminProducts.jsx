@@ -17,7 +17,16 @@ const AdminProducts = () => {
   const [stock, setStock] = useState('');
   const [category, setCategory] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [imageFile, setImageFile] = useState(null);
   const [featuresInput, setFeaturesInput] = useState('');
+
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setImageFile(e.target.files[0]);
+    } else {
+      setImageFile(null);
+    }
+  };
 
   // Inline variants states
   const [variants, setVariants] = useState([]);
@@ -105,33 +114,59 @@ const AdminProducts = () => {
     }
 
     try {
-      const images = imageUrl
-        ? [{ url: imageUrl, public_id: `custom-${Date.now()}` }]
-        : [{ url: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=800&q=80', public_id: 'default' }];
+      let payload;
+      let headers = {};
 
-      const features = featuresInput
-        ? featuresInput.split(',').map(f => f.trim()).filter(Boolean)
-        : ['Premium tailored fit', 'Exceptional comfort', 'Highly breathable fabric'];
+      if (imageFile) {
+        payload = new FormData();
+        payload.append('name', name);
+        payload.append('brand', brand);
+        payload.append('description', description);
+        payload.append('price', Number(price));
+        payload.append('stock', Number(stock));
+        payload.append('category', category);
+        payload.append('features', JSON.stringify(featuresInput ? featuresInput.split(',').map(f => f.trim()).filter(Boolean) : ['Premium tailored fit', 'Exceptional comfort', 'Highly breathable fabric']));
+        
+        const specifications = [
+          { key: 'Fabric Type', value: 'Premium Blend' },
+          { key: 'Country of Origin', value: 'Pakistan' }
+        ];
+        payload.append('specifications', JSON.stringify(specifications));
+        payload.append('variants', JSON.stringify(variants));
+        payload.append('images', imageFile);
 
-      const specifications = [
-        { key: 'Fabric Type', value: 'Premium Blend' },
-        { key: 'Country of Origin', value: 'Pakistan' }
-      ];
+        headers = {
+          'Content-Type': 'multipart/form-data'
+        };
+      } else {
+        const images = imageUrl
+          ? [{ url: imageUrl, public_id: `custom-${Date.now()}` }]
+          : [{ url: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=800&q=80', public_id: 'default' }];
 
-      const payload = {
-        name,
-        brand,
-        description,
-        price: Number(price),
-        stock: Number(stock),
-        category,
-        images,
-        features,
-        specifications,
-        variants
-      };
+        const features = featuresInput
+          ? featuresInput.split(',').map(f => f.trim()).filter(Boolean)
+          : ['Premium tailored fit', 'Exceptional comfort', 'Highly breathable fabric'];
 
-      const response = await api.post('/products', payload);
+        const specifications = [
+          { key: 'Fabric Type', value: 'Premium Blend' },
+          { key: 'Country of Origin', value: 'Pakistan' }
+        ];
+
+        payload = {
+          name,
+          brand,
+          description,
+          price: Number(price),
+          stock: Number(stock),
+          category,
+          images,
+          features,
+          specifications,
+          variants
+        };
+      }
+
+      const response = await api.post('/products', payload, { headers });
       if (response.data.success) {
         toast.success('Product created successfully!');
         setProducts([response.data.product, ...products]);
@@ -143,6 +178,7 @@ const AdminProducts = () => {
         setPrice('');
         setStock('');
         setImageUrl('');
+        setImageFile(null);
         setFeaturesInput('');
         setVariants([]);
       }
@@ -321,25 +357,37 @@ const AdminProducts = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Image Link URL</label>
+                  <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Upload Product Image (from PC)</label>
                   <input
-                    type="text"
-                    placeholder="https://images.unsplash.com/..."
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-sm font-medium transition-all"
+                    type="file"
+                    disabled={!!imageUrl}
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="w-full px-4 py-1.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none text-xs font-medium file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:uppercase file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100 transition-all disabled:opacity-40"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Bullet Features (Comma separated)</label>
+                  <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Or Image Link URL (from Web)</label>
                   <input
                     type="text"
-                    placeholder="e.g. 100% Cotton, Wrinkle-free, Modern Slim Fit"
-                    value={featuresInput}
-                    onChange={(e) => setFeaturesInput(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-sm font-medium transition-all"
+                    disabled={!!imageFile}
+                    placeholder="https://images.unsplash.com/..."
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-sm font-medium transition-all disabled:opacity-40"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Bullet Features (Comma separated)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 100% Cotton, Wrinkle-free, Modern Slim Fit"
+                  value={featuresInput}
+                  onChange={(e) => setFeaturesInput(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-sm font-medium transition-all"
+                />
               </div>
 
               {/* Dynamic Variants Editor Section */}

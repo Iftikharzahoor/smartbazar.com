@@ -41,7 +41,7 @@ const Login = () => {
       setPassword('admin12345');
       toast.info('Autofilled seeded Administrator credentials!');
     } else {
-      setEmail('customer@shopmern.com');
+      setEmail('fatima@shopmern.com');
       setPassword('customer12345');
       toast.info('Autofilled seeded Customer credentials!');
     }

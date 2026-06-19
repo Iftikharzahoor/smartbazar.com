@@ -1074,7 +1074,7 @@ const seedDB = async () => {
         price: 29.99,
         category: beautyId,
         brand: 'GlowElixir',
-        images: [{ url: 'https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=800&q=80', public_id: 'nutridaily-collagen' }],
+        images: [{ url: '/images/nutridaily-collagen.png', public_id: 'nutridaily-collagen' }],
         stock: 130,
         isFeatured: false,
         features: ['Grass-fed pasture-raised bovine collagen', 'Supports healthy joints, skin, hair, and nails', 'Hydrolyzed formula dissolves instantly', 'Unflavored - mix in hot or cold drinks'],
