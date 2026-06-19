@@ -1139,7 +1139,7 @@ const seedDB = async () => {
       password: 'customer12345', // Bcrypt pre-save hashes this automatically
       role: 'user',
       isVerified: true,
-      avatar: 'https://res.cloudinary.com/mock-cloudinary/image/upload/v1/avatars/customer.png',
+      avatar: '/model_pakistani_girl1.png',
       phone: '+92 300-1234567',
       addresses: [
         {
@@ -1159,7 +1159,7 @@ const seedDB = async () => {
       password: 'customer12345',
       role: 'user',
       isVerified: true,
-      avatar: 'https://res.cloudinary.com/mock-cloudinary/image/upload/v1/avatars/customer.png',
+      avatar: '/model_pakistani_boy1.png',
       phone: '+92 321-7654321',
       addresses: [
         {
@@ -1179,7 +1179,7 @@ const seedDB = async () => {
       password: 'customer12345',
       role: 'user',
       isVerified: true,
-      avatar: 'https://res.cloudinary.com/mock-cloudinary/image/upload/v1/avatars/customer.png',
+      avatar: '/model_pakistani_girl2.png',
       phone: '+92 333-9876543',
       addresses: [
         {
