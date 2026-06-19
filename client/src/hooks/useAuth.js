@@ -53,10 +53,10 @@ export const useAuth = () => {
     try {
       const response = await api.get('/auth/me');
       dispatch(authSuccess({ user: response.data.user }));
-      return { success: true };
+      return true;
     } catch (err) {
       dispatch(authFailure(null));
-      return { success: false };
+      return false;
     }
   };
 

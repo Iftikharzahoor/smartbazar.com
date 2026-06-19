@@ -35,8 +35,15 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // Skip refresh token logic for authentication endpoints to prevent wrong credentials
+    // from triggering a token refresh failure error toast.
+    const isAuthPath = originalRequest.url?.includes('/auth/login') ||
+                       originalRequest.url?.includes('/auth/register') ||
+                       originalRequest.url?.includes('/auth/logout') ||
+                       originalRequest.url?.includes('/auth/refresh-token');
+
     // Retry once on 401 unauthorized checks
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthPath) {
       originalRequest._retry = true;
 
       try {
@@ -54,7 +61,17 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         setAccessToken('');
-        // Clear cookies and dispatch logouts at client levels if refresh token has expired
+        // Suppress technical 'Refresh token not found' and 'Invalid refresh token session'
+        // errors by mapping them to a clean user-friendly session expiry message.
+        if (refreshError.response?.data) {
+          const originalError = refreshError.response.data.error;
+          if (
+            originalError === 'Refresh token not found' || 
+            originalError === 'Invalid refresh token session'
+          ) {
+            refreshError.response.data.error = 'Session expired. Please sign in again.';
+          }
+        }
         return Promise.reject(refreshError);
       }
     }

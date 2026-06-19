@@ -66,6 +66,7 @@ function App() {
   // Recover active session and fetch user cart on load
   useEffect(() => {
     const initSession = async () => {
+      // checkUserSession returns a primitive boolean (true/false) to prevent truthiness bugs
       const recovered = await checkUserSession();
       if (recovered) {
         await fetchCart();
