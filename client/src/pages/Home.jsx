@@ -387,7 +387,7 @@ const Home = () => {
                     <motion.img
                       key={activeModelImageIdx}
                       src={modelImages[activeModelImageIdx].url}
-                      alt="SmartBazaar Brand Ambassador Model"
+                      alt="Smart Inventory Brand Ambassador Model"
                       initial={{ x: '100%', opacity: 0 }}
                       animate={{ x: 0, opacity: 1, y: scrollY * -0.04 }}
                       exit={{ x: '-100%', opacity: 0 }}
@@ -619,11 +619,11 @@ const Home = () => {
         )}
       </section>
 
-      {/* SMARTBAZAAR LIVE - PREMIUM REELS SECTION */}
+      {/* SMART INVENTORY LIVE - PREMIUM REELS SECTION */}
       <section className="relative py-24 border-b border-slate-900 z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center space-y-4 mb-16">
           <div className="inline-flex items-center gap-2 bg-[#EC4899]/10 border border-[#EC4899]/20 text-[#EC4899] font-semibold text-xs uppercase tracking-[0.2em] px-4 py-2 rounded-full">
-            SmartBazaar Live
+            Smart Inventory Live
           </div>
           <h2 className="text-4xl sm:text-5xl font-display font-extrabold text-white">Product Reels</h2>
           <p className="text-[#94A3B8] max-w-md mx-auto font-light text-base">Watch our luxury apparel and caps in action. Click any card to play in high quality with audio!</p>
@@ -933,7 +933,7 @@ const Home = () => {
                   className="w-full h-full object-cover"
                 />
               </div>
-              <h3 className="text-white font-extrabold text-2xl mt-6">SmartBazaar Luxury Collection</h3>
+              <h3 className="text-white font-extrabold text-2xl mt-6">Smart Inventory Luxury Collection</h3>
               <p className="text-[#94A3B8] font-light text-sm mt-1">Exquisite fabric textures, organic materials, and flawless tailored fits designed for the next frontier.</p>
             </motion.div>
           </motion.div>

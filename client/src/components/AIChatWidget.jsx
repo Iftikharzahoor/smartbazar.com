@@ -8,7 +8,7 @@ const AIChatWidget = () => {
   const [messages, setMessages] = useState([
     {
       sender: 'bot',
-      text: 'Hello! I am your SmartBazar AI assistant. Ask me anything about our Electronics, Fashion, Home & Living, or Beauty products. I can also help you with discount codes!'
+      text: 'Hello! I am your Smart Inventory AI assistant. Ask me anything about our Electronics, Fashion, Home & Living, or Beauty products. I can also help you with discount codes!'
     }
   ]);
   const [input, setInput] = useState('');
@@ -125,7 +125,7 @@ const AIChatWidget = () => {
                   <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
                 </div>
                 <div className="text-left">
-                  <h4 className="font-display font-bold text-sm leading-tight">SmartBazar AI</h4>
+                  <h4 className="font-display font-bold text-sm leading-tight">Smart Inventory AI</h4>
                   <span className="text-[10px] text-indigo-200 font-semibold tracking-wider uppercase">Active Helper</span>
                 </div>
               </div>
@@ -177,7 +177,7 @@ const AIChatWidget = () => {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask SmartBazar AI..."
+                placeholder="Ask Smart Inventory AI..."
                 className="flex-grow bg-slate-900 border border-slate-800 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/35 transition-all placeholder-slate-500"
               />
               <button

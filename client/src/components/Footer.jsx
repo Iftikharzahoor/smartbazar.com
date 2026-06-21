@@ -11,7 +11,7 @@ const Footer = () => {
           <div className="space-y-6">
             <Link to="/" className="font-display font-extrabold text-2xl tracking-tight text-white flex items-center gap-2">
               <ShoppingBag className="w-7 h-7 text-indigo-500" />
-              Smart<span className="text-indigo-400">Bazaar</span>
+              Smart<span className="text-indigo-400">Inventory</span>
             </Link>
             <p className="text-slate-400 text-sm leading-relaxed">
               Experience the pinnacle of full-stack digital retail. Beautiful design meeting secure, high-performance e-commerce mechanics.
@@ -68,7 +68,7 @@ const Footer = () => {
 
         {/* Footer Base */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6 text-sm text-slate-500">
-          <p>© {new Date().getFullYear()} SmartBazaar. Built on MongoDB, Express, React, Node.</p>
+          <p>© {new Date().getFullYear()} Smart Inventory. Built on MongoDB, Express, React, Node.</p>
           <div className="flex items-center gap-6">
             <span>Stripe Card</span>
             <span>•</span>

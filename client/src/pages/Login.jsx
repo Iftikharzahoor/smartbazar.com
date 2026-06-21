@@ -121,7 +121,7 @@ const Login = () => {
         </form>
 
         <div className="text-center text-xs text-[#94A3B8] mt-6 pt-6 border-t border-slate-800/80">
-          New to SmartBazaar?{' '}
+          New to Smart Inventory?{' '}
           <Link to="/register" className="text-[#6366F1] font-bold hover:text-[#8B5CF6] transition-colors">
             Create an Account
           </Link>

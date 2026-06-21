@@ -21,7 +21,7 @@ const About = () => {
             About the Developer
           </h1>
           <p className="text-[#94A3B8] max-w-2xl mx-auto font-light text-base leading-relaxed text-center">
-            Meet the architectural engineer behind SmartBazaar — designing world-class stateless web platforms and premium digital retail ecosystems.
+            Meet the architectural engineer behind Smart Inventory — designing world-class stateless web platforms and premium digital retail ecosystems.
           </p>
         </div>
 
