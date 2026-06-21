@@ -1432,6 +1432,7 @@ const seedDB = async () => {
     const employeesData = [
       {
         employeeId: 'EMP101',
+        password: 'password123',
         name: 'Sahu Ahmed',
         role: 'Manager',
         phoneNumber: '+92 300 1234567',
@@ -1441,6 +1442,7 @@ const seedDB = async () => {
       },
       {
         employeeId: 'EMP102',
+        password: 'password123',
         name: 'Zeeshan Khan',
         role: 'Cashier',
         phoneNumber: '+92 312 9876543',
@@ -1450,6 +1452,7 @@ const seedDB = async () => {
       },
       {
         employeeId: 'EMP103',
+        password: 'password123',
         name: 'Ayesha Bibi',
         role: 'Salesperson',
         phoneNumber: '+92 333 4567890',
@@ -1459,6 +1462,7 @@ const seedDB = async () => {
       },
       {
         employeeId: 'EMP104',
+        password: 'password123',
         name: 'Kamran Shah',
         role: 'Salesperson',
         phoneNumber: '+92 321 7654321',

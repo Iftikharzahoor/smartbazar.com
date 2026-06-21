@@ -7,6 +7,11 @@ const EmployeeSchema = new mongoose.Schema({
     unique: true,
     trim: true
   },
+  password: {
+    type: String,
+    required: [true, 'Please add a password'],
+    default: 'password123'
+  },
   name: {
     type: String,
     required: [true, 'Please add an employee name'],

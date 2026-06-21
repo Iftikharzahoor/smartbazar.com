@@ -157,3 +157,56 @@ export const getEmployeeStats = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Log in employee via portal
+// @route   POST /api/v1/employees/login
+// @access  Public
+export const loginEmployee = async (req, res, next) => {
+  const { employeeId, password } = req.body;
+
+  try {
+    if (!employeeId || !password) {
+      return next(new ErrorResponse('Please provide employee ID and password', 400));
+    }
+
+    const employee = await Employee.findOne({ employeeId });
+    if (!employee) {
+      return next(new ErrorResponse('Invalid employee ID', 401));
+    }
+
+    if (employee.password !== password) {
+      return next(new ErrorResponse('Invalid credentials', 401));
+    }
+
+    res.status(200).json({
+      success: true,
+      employee
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Check-in employee (sets status to Present)
+// @route   POST /api/v1/employees/check-in
+// @access  Public
+export const checkInEmployee = async (req, res, next) => {
+  const { employeeId } = req.body;
+
+  try {
+    const employee = await Employee.findOne({ employeeId });
+    if (!employee) {
+      return next(new ErrorResponse('Employee not found', 404));
+    }
+
+    employee.attendanceStatus = 'Present';
+    await employee.save();
+
+    res.status(200).json({
+      success: true,
+      employee
+    });
+  } catch (error) {
+    next(error);
+  }
+};

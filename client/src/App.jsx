@@ -25,6 +25,8 @@ import AdminDashboard from './pages/admin/AdminDashboard.jsx';
 import AdminProducts from './pages/admin/AdminProducts.jsx';
 import AdminOrders from './pages/admin/AdminOrders.jsx';
 import AdminUsers from './pages/admin/AdminUsers.jsx';
+import EmployeeLogin from './pages/employee/EmployeeLogin.jsx';
+import EmployeeDashboard from './pages/employee/EmployeeDashboard.jsx';
 
 import { useAuth } from './hooks/useAuth.js';
 import { useCart } from './hooks/useCart.js';
@@ -101,6 +103,10 @@ function App() {
           <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
           <Route path="/faq" element={<Faq />} />
           <Route path="/privacy" element={<Privacy />} />
+
+          {/* Employee Portal routes */}
+          <Route path="/employee/login" element={<EmployeeLogin />} />
+          <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
           
           {/* Admin routes panel */}
           <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />

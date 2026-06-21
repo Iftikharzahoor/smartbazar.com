@@ -5,13 +5,19 @@ import {
   getEmployeeById,
   createEmployee,
   updateEmployee,
-  deleteEmployee
+  deleteEmployee,
+  loginEmployee,
+  checkInEmployee
 } from '../controllers/employeeController.js';
 import { protect, admin } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Apply auth and admin check middleware to protect all routes
+// Public Employee Portal Endpoints
+router.post('/login', loginEmployee);
+router.post('/check-in', checkInEmployee);
+
+// Admin-Only Employee HR Records Management Endpoints
 router.use(protect);
 router.use(admin);
 
