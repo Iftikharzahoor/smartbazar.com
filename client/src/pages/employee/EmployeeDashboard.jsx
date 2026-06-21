@@ -21,7 +21,14 @@ import {
   Sparkles, 
   Users,
   Clock,
-  ChevronDown
+  ChevronDown,
+  X,
+  Bell,
+  Trophy,
+  FileText,
+  DollarSign,
+  Award,
+  Send
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
@@ -38,6 +45,11 @@ const EmployeeDashboard = () => {
   const [billingQty, setBillingQty] = useState(1);
   const [receiptModalOpen, setReceiptModalOpen] = useState(false);
   const [lastReceipt, setLastReceipt] = useState(null);
+
+  // Global portal states
+  const [notices, setNotices] = useState([]);
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [showPayslipModal, setShowPayslipModal] = useState(false);
 
   // Salesperson states
   const [salesSearch, setSalesSearch] = useState('');
@@ -57,7 +69,7 @@ const EmployeeDashboard = () => {
     const parsed = JSON.parse(session);
     setEmployee(parsed);
     
-    // Fetch products catalog and staff details
+    // Fetch products catalog, staff, notices and leaderboard
     const fetchPortalData = async () => {
       try {
         const prodRes = await api.get('/products?limit=100');
@@ -83,6 +95,22 @@ const EmployeeDashboard = () => {
           { _id: 'cat-home', name: 'Home & Living' },
           { _id: 'cat-beauty', name: 'Beauty & Wellness' }
         ]);
+      }
+
+      // Fetch Notices
+      try {
+        const noticeRes = await api.get('/employees/notices');
+        setNotices(noticeRes.data.notices || []);
+      } catch (err) {
+        console.warn('Could not fetch notices:', err);
+      }
+
+      // Fetch Leaderboard
+      try {
+        const lbRes = await api.get('/employees/leaderboard');
+        setLeaderboard(lbRes.data.leaderboard || []);
+      } catch (err) {
+        console.warn('Could not fetch leaderboard:', err);
       }
 
       // If Manager, fetch other employees
@@ -118,12 +146,34 @@ const EmployeeDashboard = () => {
         setEmployee(response.data.employee);
         localStorage.setItem('employee_session', JSON.stringify(response.data.employee));
         toast.success('Successfully checked in! Enjoy your shift.');
+        // Refresh leaderboard
+        const lbRes = await api.get('/employees/leaderboard');
+        setLeaderboard(lbRes.data.leaderboard || []);
       }
     } catch (err) {
       const updated = { ...employee, attendanceStatus: 'Present' };
       setEmployee(updated);
       localStorage.setItem('employee_session', JSON.stringify(updated));
       toast.info('Checked in locally. Shift started.');
+    }
+  };
+
+  const handleCheckOut = async () => {
+    try {
+      const response = await api.post('/employees/check-out', { employeeId: employee.employeeId });
+      if (response.data.success) {
+        setEmployee(response.data.employee);
+        localStorage.setItem('employee_session', JSON.stringify(response.data.employee));
+        toast.success('Successfully checked out! Shift ended.');
+        // Refresh leaderboard
+        const lbRes = await api.get('/employees/leaderboard');
+        setLeaderboard(lbRes.data.leaderboard || []);
+      }
+    } catch (err) {
+      const updated = { ...employee, attendanceStatus: 'Absent' };
+      setEmployee(updated);
+      localStorage.setItem('employee_session', JSON.stringify(updated));
+      toast.info('Checked out locally. Shift ended.');
     }
   };
 
@@ -196,8 +246,7 @@ const EmployeeDashboard = () => {
         return p;
       });
 
-      // Attempt to deduct stock on server (optional: backend handles order/stock internally,
-      // but doing PUT catalog updates keeps sandbox demo live and consistent)
+      // Attempt to deduct stock on server
       for (let item of billingCart) {
         try {
           const prod = products.find(p => p._id === item.productId);
@@ -216,6 +265,23 @@ const EmployeeDashboard = () => {
       }
 
       setProducts(updatedProducts);
+
+      // Record POS transaction on backend to award commission and log stats
+      try {
+        const posResponse = await api.post('/employees/pos-sale', {
+          employeeId: employee.employeeId,
+          amount: billingTotal
+        });
+        if (posResponse.data.success) {
+          setEmployee(posResponse.data.employee);
+          localStorage.setItem('employee_session', JSON.stringify(posResponse.data.employee));
+          // Refresh leaderboard
+          const lbRes = await api.get('/employees/leaderboard');
+          setLeaderboard(lbRes.data.leaderboard || []);
+        }
+      } catch (err) {
+        console.warn('Could not record POS transaction on server:', err);
+      }
 
       const receipt = {
         invoiceId: `INV-${Date.now().toString().slice(-6)}`,
@@ -342,7 +408,7 @@ const EmployeeDashboard = () => {
           </div>
         )}
 
-        {/* Attendance Tracker check-in */}
+        {/* Attendance Tracker check-in/out */}
         {employee && (
           <div className="bg-slate-950/40 border border-slate-900 p-5 rounded-3xl space-y-3.5 text-left">
             <div className="flex justify-between items-center">
@@ -356,15 +422,59 @@ const EmployeeDashboard = () => {
               </span>
             </div>
 
-            {employee.attendanceStatus !== 'Present' && (
+            {employee.attendanceStatus !== 'Present' ? (
               <button
                 onClick={handleCheckIn}
-                className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"
+                className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer animate-pulse"
               >
                 <Clock className="w-4 h-4" />
-                Check-In for Today
+                Check-In Today
+              </button>
+            ) : (
+              <button
+                onClick={handleCheckOut}
+                className="w-full py-2.5 bg-rose-600/20 hover:bg-rose-600 border border-rose-500/30 text-rose-400 hover:text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"
+              >
+                <Clock className="w-4 h-4" />
+                Check-Out Shift
               </button>
             )}
+
+            {/* Display shift details if active today */}
+            {(() => {
+              const todayStr = new Date().toLocaleDateString('en-CA');
+              const todayLog = employee.logs?.find(l => l.date === todayStr);
+              if (todayLog) {
+                return (
+                  <div className="pt-2.5 border-t border-slate-900/60 text-[11px] text-[#94A3B8] space-y-1.5 font-medium">
+                    <div className="flex justify-between">
+                      <span>Checked In:</span>
+                      <span className="text-white font-mono font-bold">{todayLog.checkInTime}</span>
+                    </div>
+                    {todayLog.checkOutTime && (
+                      <div className="flex justify-between">
+                        <span>Checked Out:</span>
+                        <span className="text-white font-mono font-bold">{todayLog.checkOutTime}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span>Hours Worked:</span>
+                      <span className="text-indigo-400 font-mono font-black">{todayLog.hoursWorked > 0 ? `${todayLog.hoursWorked} hrs` : 'Active...'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Dealt/Sales:</span>
+                      <span className="text-emerald-400 font-bold">{todayLog.customersDealt} customer(s)</span>
+                    </div>
+                    {todayLog.notes && (
+                      <div className="text-[9px] text-slate-500 font-light border-t border-slate-900/40 pt-1.5 italic mt-1 leading-relaxed">
+                        {todayLog.notes}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </div>
         )}
 
@@ -706,6 +816,114 @@ const EmployeeDashboard = () => {
           </div>
         )}
 
+        {/* GLOBAL BOTTOM CONSOLE WIDGETS */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-8 border-t border-slate-900/60">
+          
+          {/* Store Announcements Notice Board */}
+          <div className="bg-[#0F172A]/40 border border-slate-800/80 rounded-3xl p-6 shadow-xl backdrop-blur-md space-y-4">
+            <h3 className="font-display font-extrabold text-white flex items-center gap-2 border-b border-slate-900 pb-3 text-sm uppercase tracking-wider">
+              <Bell className="w-4.5 h-4.5 text-indigo-400" />
+              Store Notice Board
+            </h3>
+            <div className="space-y-3.5 max-h-60 overflow-y-auto pr-2">
+              {notices.length === 0 ? (
+                <div className="text-center text-xs text-slate-500 py-6">No announcements posted yet.</div>
+              ) : (
+                notices.map((notice, idx) => (
+                  <div key={notice._id || idx} className="bg-slate-950/40 border border-slate-900/60 p-4 rounded-2xl text-left space-y-1.5">
+                    <p className="text-xs text-slate-350 font-medium leading-relaxed">{notice.content}</p>
+                    <div className="flex justify-between text-[9px] text-slate-500 font-bold uppercase tracking-wider">
+                      <span>By: {notice.author}</span>
+                      <span>{new Date(notice.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Sales & Commissions Leaderboard */}
+          <div className="bg-[#0F172A]/40 border border-slate-800/80 rounded-3xl p-6 shadow-xl backdrop-blur-md space-y-4">
+            <h3 className="font-display font-extrabold text-white flex items-center gap-2 border-b border-slate-900 pb-3 text-sm uppercase tracking-wider">
+              <Trophy className="w-4.5 h-4.5 text-amber-400" />
+              Sales Leaderboard
+            </h3>
+            <div className="space-y-2.5 max-h-60 overflow-y-auto pr-2">
+              {leaderboard.length === 0 ? (
+                <div className="text-center text-xs text-slate-500 py-6">No leaderboard records.</div>
+              ) : (
+                leaderboard.map((user, idx) => (
+                  <div key={user._id || idx} className="flex justify-between items-center bg-slate-950/20 border border-slate-900/40 p-3 rounded-xl">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black shrink-0 ${
+                        idx === 0 ? 'bg-amber-400/20 text-amber-400 border border-amber-500/20' :
+                        idx === 1 ? 'bg-slate-400/20 text-slate-350 border border-slate-400/20' :
+                        idx === 2 ? 'bg-amber-700/20 text-amber-600 border border-amber-700/20' :
+                        'bg-slate-900 text-slate-500'
+                      }`}>
+                        {idx + 1}
+                      </span>
+                      <div className="min-w-0">
+                        <span className="font-extrabold text-xs text-white block truncate">{user.name}</span>
+                        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block mt-0.5">{user.role}</span>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="font-black text-xs text-emerald-400 block">${user.totalSales?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      <span className="text-[8px] text-indigo-400 font-semibold tracking-wider uppercase block">Comm: ${user.commissionEarned?.toFixed(2)}</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Payslip & Salary Console */}
+          <div className="bg-[#0F172A]/40 border border-slate-800/80 rounded-3xl p-6 shadow-xl backdrop-blur-md space-y-4">
+            <h3 className="font-display font-extrabold text-white flex items-center gap-2 border-b border-slate-900 pb-3 text-sm uppercase tracking-wider">
+              <FileText className="w-4.5 h-4.5 text-[#EC4899]" />
+              Salary & Payslips
+            </h3>
+            <div className="space-y-4 text-left">
+              <div className="flex justify-between items-center bg-slate-950/40 p-3.5 border border-slate-900 rounded-2xl">
+                <div>
+                  <span className="text-[9px] text-slate-500 font-black uppercase tracking-wider block">Monthly Base Salary</span>
+                  <span className="text-base font-black text-white mt-0.5 block">${employee.salary?.toLocaleString()} PKR</span>
+                </div>
+                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase border ${
+                  employee.salaryStatus === 'Paid' ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25' : 'bg-amber-500/15 text-amber-400 border-amber-500/25'
+                }`}>
+                  {employee.salaryStatus === 'Paid' ? 'Paid' : 'Pending'}
+                </span>
+              </div>
+
+              <div className="bg-slate-950/20 p-3 border border-slate-900/60 rounded-2xl text-[11px] space-y-1.5 text-slate-400">
+                <div className="flex justify-between">
+                  <span>Commission Rate:</span>
+                  <span className="text-white font-bold">1% on Retail POS</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Commissions Earned:</span>
+                  <span className="text-emerald-400 font-bold">${employee.commissionEarned?.toFixed(2)} PKR</span>
+                </div>
+                <div className="flex justify-between border-t border-slate-850 pt-2 text-xs text-white font-extrabold">
+                  <span>Gross Pay:</span>
+                  <span>${(employee.salary + (employee.commissionEarned || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} PKR</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowPayslipModal(true)}
+                className="w-full py-2.5 bg-[#EC4899] hover:bg-[#db2777] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-pink-600/10 transition-all cursor-pointer"
+              >
+                <Printer className="w-4.5 h-4.5" />
+                View & Print Payslip
+              </button>
+            </div>
+          </div>
+
+        </div>
+
       </div>
 
       {/* ---------------------------------------------------- */}
@@ -790,6 +1008,103 @@ const EmployeeDashboard = () => {
                 >
                   <Printer className="w-4 h-4" />
                   Print Receipt Copy
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ---------------------------------------------------- */}
+      {/* MODAL: PRINTABLE PAYSLIP */}
+      {/* ---------------------------------------------------- */}
+      <AnimatePresence>
+        {showPayslipModal && (
+          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl p-8 space-y-6 relative text-left"
+            >
+              <button 
+                onClick={() => setShowPayslipModal(false)}
+                className="absolute top-6 right-6 p-2 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div id="printable-payslip" className="space-y-6">
+                {/* Payslip Header logo */}
+                <div className="text-center pb-4 border-b border-dashed border-slate-800 space-y-1">
+                  <div className="text-indigo-400 font-black text-2xl tracking-widest uppercase">Smart Bazaar Ltd.</div>
+                  <div className="text-slate-500 text-xs font-bold tracking-wider uppercase">Official Employee Payslip Statement</div>
+                  <div className="text-[10px] text-slate-500 font-mono">Statement Period: June 2026</div>
+                </div>
+
+                {/* Metadata Grid */}
+                <div className="grid grid-cols-2 gap-4 text-xs text-slate-400 font-medium pb-4 border-b border-slate-800/80">
+                  <div className="space-y-1.5">
+                    <div>Employee Name: <strong className="text-white">{employee.name}</strong></div>
+                    <div>Employee ID: <strong className="text-white font-mono">{employee.employeeId}</strong></div>
+                    <div>Email Address: <strong className="text-white">{employee.email || 'N/A'}</strong></div>
+                  </div>
+                  <div className="space-y-1.5 text-right">
+                    <div>Role/Position: <strong className="text-white">{employee.role}</strong></div>
+                    <div>Salary Status: <strong className="text-emerald-400 uppercase font-black">{employee.salaryStatus}</strong></div>
+                    <div>Release Date: <strong className="text-white">{employee.salaryStatus === 'Paid' ? new Date().toLocaleDateString() : 'Pending Release'}</strong></div>
+                  </div>
+                </div>
+
+                {/* Payroll Calculations table */}
+                <div className="space-y-3">
+                  <div className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Salary Breakdown</div>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between font-medium text-slate-350">
+                      <span>Base Salary:</span>
+                      <span className="text-white font-bold">${employee.salary?.toLocaleString()} PKR</span>
+                    </div>
+                    <div className="flex justify-between font-medium text-slate-350">
+                      <span>Commissions (1% rate):</span>
+                      <span className="text-emerald-400 font-bold">+${employee.commissionEarned?.toFixed(2)} PKR</span>
+                    </div>
+                    <div className="flex justify-between font-medium text-slate-350">
+                      <span>Store Sales Generated:</span>
+                      <span className="text-slate-500">(${employee.totalSales?.toLocaleString()} PKR)</span>
+                    </div>
+                    <div className="flex justify-between border-t border-slate-800 pt-3 text-sm text-white font-black">
+                      <span>Total Net Release Amount:</span>
+                      <span className="text-[#EC4899] text-base">${(employee.salary + (employee.commissionEarned || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} PKR</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-[10px] text-slate-500 text-center pt-4 border-t border-dashed border-slate-800 italic">
+                  This is a computer generated digital payslip statement. No physical signature is required.
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex gap-4">
+                <button
+                  onClick={() => {
+                    const printContents = document.getElementById('printable-payslip').innerHTML;
+                    const originalContents = document.body.innerHTML;
+                    document.body.innerHTML = printContents;
+                    window.print();
+                    document.body.innerHTML = originalContents;
+                    window.location.reload(); // Reload to restore React state cleanly
+                  }}
+                  className="flex-grow py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"
+                >
+                  <Printer className="w-4 h-4" />
+                  Print Statement
+                </button>
+                <button
+                  onClick={() => setShowPayslipModal(false)}
+                  className="py-3 px-6 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-2xl text-xs font-bold cursor-pointer"
+                >
+                  Close
                 </button>
               </div>
             </motion.div>

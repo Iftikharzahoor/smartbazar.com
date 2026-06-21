@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import api from '../../services/api.js';
 import { Sparkles, Key, User, ArrowRight, UserCheck, ShieldAlert } from 'lucide-react';
@@ -7,6 +7,7 @@ import { toast } from 'react-toastify';
 
 const EmployeeLogin = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [employeeId, setEmployeeId] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -19,10 +20,20 @@ const EmployeeLogin = () => {
     }
   }, [navigate]);
 
+  // Handle URL Autofill
+  useEffect(() => {
+    const autofill = searchParams.get('autofill');
+    if (autofill === 'employee') {
+      setEmployeeId('zeeshan@smartbazaar.com');
+      setPassword('password123');
+      toast.success('Autofilled Cashier sandbox credentials!');
+    }
+  }, [searchParams]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!employeeId || !password) {
-      toast.error('Please enter both Employee ID and password');
+      toast.error('Please enter both Employee ID/Email and password');
       return;
     }
 
@@ -37,29 +48,32 @@ const EmployeeLogin = () => {
     } catch (err) {
       // Offline fallback login for easy local evaluation
       const mockEmployees = {
-        'EMP101': { _id: 'emp-1', employeeId: 'EMP101', name: 'Sahu Ahmed', role: 'Manager', phoneNumber: '+92 300 1234567', attendanceStatus: 'Present', salary: 75000, joiningDate: '2025-01-15' },
-        'EMP102': { _id: 'emp-2', employeeId: 'EMP102', name: 'Zeeshan Khan', role: 'Cashier', phoneNumber: '+92 312 9876543', attendanceStatus: 'Present', salary: 45000, joiningDate: '2025-03-10' },
-        'EMP103': { _id: 'emp-3', employeeId: 'EMP103', name: 'Ayesha Bibi', role: 'Salesperson', phoneNumber: '+92 333 4567890', attendanceStatus: 'Leave', salary: 35000, joiningDate: '2025-05-01' },
-        'EMP104': { _id: 'emp-4', employeeId: 'EMP104', name: 'Kamran Shah', role: 'Salesperson', phoneNumber: '+92 321 7654321', attendanceStatus: 'Absent', salary: 32000, joiningDate: '2025-06-01' }
+        'SAHU@SMARTBAZAAR.COM': { _id: 'emp-1', employeeId: 'EMP101', email: 'sahu@smartbazaar.com', name: 'Sahu Ahmed', role: 'Manager', phoneNumber: '+92 300 1234567', attendanceStatus: 'Present', salary: 75000, totalSales: 0, commissionEarned: 0, salaryStatus: 'Unpaid', joiningDate: '2025-01-15', logs: [] },
+        'ZEESHAN@SMARTBAZAAR.COM': { _id: 'emp-2', employeeId: 'EMP102', email: 'zeeshan@smartbazaar.com', name: 'Zeeshan Khan', role: 'Cashier', phoneNumber: '+92 312 9876543', attendanceStatus: 'Present', salary: 45000, totalSales: 24500, commissionEarned: 245, salaryStatus: 'Unpaid', joiningDate: '2025-03-10', logs: [] },
+        'AYESHA@SMARTBAZAAR.COM': { _id: 'emp-3', employeeId: 'EMP103', email: 'ayesha@smartbazaar.com', name: 'Ayesha Bibi', role: 'Salesperson', phoneNumber: '+92 333 4567890', attendanceStatus: 'Leave', salary: 35000, totalSales: 0, commissionEarned: 0, salaryStatus: 'Paid', joiningDate: '2025-05-01', logs: [] },
+        'EMP101': { _id: 'emp-1', employeeId: 'EMP101', email: 'sahu@smartbazaar.com', name: 'Sahu Ahmed', role: 'Manager', phoneNumber: '+92 300 1234567', attendanceStatus: 'Present', salary: 75000, totalSales: 0, commissionEarned: 0, salaryStatus: 'Unpaid', joiningDate: '2025-01-15', logs: [] },
+        'EMP102': { _id: 'emp-2', employeeId: 'EMP102', email: 'zeeshan@smartbazaar.com', name: 'Zeeshan Khan', role: 'Cashier', phoneNumber: '+92 312 9876543', attendanceStatus: 'Present', salary: 45000, totalSales: 24500, commissionEarned: 245, salaryStatus: 'Unpaid', joiningDate: '2025-03-10', logs: [] },
+        'EMP103': { _id: 'emp-3', employeeId: 'EMP103', email: 'ayesha@smartbazaar.com', name: 'Ayesha Bibi', role: 'Salesperson', phoneNumber: '+92 333 4567890', attendanceStatus: 'Leave', salary: 35000, totalSales: 0, commissionEarned: 0, salaryStatus: 'Paid', joiningDate: '2025-05-01', logs: [] }
       };
 
-      const found = mockEmployees[employeeId.toUpperCase()];
+      const key = employeeId.toUpperCase();
+      const found = mockEmployees[key];
       if (found && password === 'password123') {
         localStorage.setItem('employee_session', JSON.stringify(found));
         toast.success(`Welcome back (offline mode), ${found.name}!`);
         navigate('/employee/dashboard');
       } else {
-        toast.error(err.response?.data?.error || 'Invalid employee ID or password');
+        toast.error(err.response?.data?.error || 'Invalid credentials or password');
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAutofill = (id) => {
-    setEmployeeId(id);
+  const handleAutofill = (email) => {
+    setEmployeeId(email);
     setPassword('password123');
-    toast.success(`${id} credentials autofilled!`);
+    toast.success(`${email} credentials autofilled!`);
   };
 
   return (
@@ -88,13 +102,13 @@ const EmployeeLogin = () => {
         >
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Employee ID</label>
+              <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Employee Email / ID</label>
               <div className="relative">
                 <User className="absolute left-4 top-3.5 w-4 h-4 text-slate-500" />
                 <input
                   type="text"
                   required
-                  placeholder="e.g. EMP102"
+                  placeholder="e.g. zeeshan@smartbazaar.com or EMP102"
                   value={employeeId}
                   onChange={(e) => setEmployeeId(e.target.value)}
                   className="w-full pl-11 pr-4 py-3 bg-slate-950/50 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-sm text-white font-medium"
@@ -142,22 +156,22 @@ const EmployeeLogin = () => {
             
             <div className="grid grid-cols-3 gap-2">
               <button
-                onClick={() => handleAutofill('EMP101')}
-                className="py-2.5 px-1 bg-indigo-500/5 hover:bg-indigo-500/15 border border-indigo-500/10 text-indigo-400 text-[10px] font-black rounded-lg transition-all"
+                onClick={() => handleAutofill('sahu@smartbazaar.com')}
+                className="py-2.5 px-1 bg-indigo-500/5 hover:bg-indigo-500/15 border border-indigo-500/10 text-indigo-400 text-[9px] font-black rounded-lg transition-all truncate"
               >
-                Manager (101)
+                Manager
               </button>
               <button
-                onClick={() => handleAutofill('EMP102')}
-                className="py-2.5 px-1 bg-emerald-500/5 hover:bg-emerald-500/15 border border-emerald-500/10 text-emerald-400 text-[10px] font-black rounded-lg transition-all"
+                onClick={() => handleAutofill('zeeshan@smartbazaar.com')}
+                className="py-2.5 px-1 bg-emerald-500/5 hover:bg-emerald-500/15 border border-emerald-500/10 text-emerald-400 text-[9px] font-black rounded-lg transition-all truncate"
               >
-                Cashier (102)
+                Cashier
               </button>
               <button
-                onClick={() => handleAutofill('EMP103')}
-                className="py-2.5 px-1 bg-amber-500/5 hover:bg-amber-500/15 border border-amber-500/10 text-amber-400 text-[10px] font-black rounded-lg transition-all"
+                onClick={() => handleAutofill('ayesha@smartbazaar.com')}
+                className="py-2.5 px-1 bg-amber-500/5 hover:bg-amber-500/15 border border-amber-500/10 text-amber-400 text-[9px] font-black rounded-lg transition-all truncate"
               >
-                Sales (103)
+                Sales
               </button>
             </div>
           </div>

@@ -10,6 +10,7 @@ import Category from '../models/Category.js';
 import Coupon from '../models/Coupon.js';
 import Order from '../models/Order.js';
 import Employee from '../models/Employee.js';
+import Notice from '../models/Notice.js';
 
 // Load environment variables
 dotenv.config();
@@ -1428,47 +1429,86 @@ const seedDB = async () => {
     await Order.create(ordersData);
     console.log('Orders seeded successfully.');
 
+    // Seed Notices
+    await Notice.deleteMany();
+    await Notice.create([
+      { content: 'Welcome to the Smart Bazaar Employee Portal! Please ensure you check in at the start of your shift.', author: 'Admin' },
+      { content: 'New promotion rule: Cashiers earn 1% commission on all retail sales completed through their POS terminal.', author: 'Store Owner' }
+    ]);
+    console.log('Notices seeded successfully.');
+
     // Seed Employees
     const employeesData = [
       {
         employeeId: 'EMP101',
+        email: 'sahu@smartbazaar.com',
         password: 'password123',
         name: 'Sahu Ahmed',
         role: 'Manager',
         phoneNumber: '+92 300 1234567',
         attendanceStatus: 'Present',
         salary: 75000,
-        joiningDate: new Date('2025-01-15')
+        joiningDate: new Date('2025-01-15'),
+        totalSales: 0,
+        commissionEarned: 0,
+        salaryStatus: 'Unpaid',
+        logs: [
+          { date: '2026-06-19', status: 'Full Shift', checkInTime: '08:45', checkOutTime: '17:15', hoursWorked: 8.5, customersDealt: 0, salesGenerated: 0, notes: 'On-time Check-in' },
+          { date: '2026-06-20', status: 'Full Shift', checkInTime: '08:50', checkOutTime: '17:00', hoursWorked: 8.17, customersDealt: 0, salesGenerated: 0, notes: 'On-time Check-in' }
+        ]
       },
       {
         employeeId: 'EMP102',
+        email: 'zeeshan@smartbazaar.com',
         password: 'password123',
         name: 'Zeeshan Khan',
         role: 'Cashier',
         phoneNumber: '+92 312 9876543',
         attendanceStatus: 'Present',
         salary: 45000,
-        joiningDate: new Date('2025-03-10')
+        joiningDate: new Date('2025-03-10'),
+        totalSales: 24500,
+        commissionEarned: 245,
+        salaryStatus: 'Unpaid',
+        logs: [
+          { date: '2026-06-19', status: 'Full Shift', checkInTime: '08:30', checkOutTime: '17:00', hoursWorked: 8.5, customersDealt: 12, salesGenerated: 14500, notes: 'On-time Check-in' },
+          { date: '2026-06-20', status: 'Full Shift', checkInTime: '08:40', checkOutTime: '16:50', hoursWorked: 8.17, customersDealt: 9, salesGenerated: 10000, notes: 'On-time Check-in' }
+        ]
       },
       {
         employeeId: 'EMP103',
+        email: 'ayesha@smartbazaar.com',
         password: 'password123',
         name: 'Ayesha Bibi',
         role: 'Salesperson',
         phoneNumber: '+92 333 4567890',
         attendanceStatus: 'Leave',
         salary: 35000,
-        joiningDate: new Date('2025-05-01')
+        joiningDate: new Date('2025-05-01'),
+        totalSales: 0,
+        commissionEarned: 0,
+        salaryStatus: 'Paid',
+        logs: [
+          { date: '2026-06-19', status: 'Half Leave', checkInTime: '09:15', checkOutTime: '13:00', hoursWorked: 3.75, customersDealt: 4, salesGenerated: 0, notes: 'Late Check-in' },
+          { date: '2026-06-20', status: 'Absent', checkInTime: '', checkOutTime: '', hoursWorked: 0, customersDealt: 0, salesGenerated: 0, notes: 'Approved leave request' }
+        ]
       },
       {
         employeeId: 'EMP104',
+        email: 'kamran@smartbazaar.com',
         password: 'password123',
         name: 'Kamran Shah',
         role: 'Salesperson',
         phoneNumber: '+92 321 7654321',
         attendanceStatus: 'Absent',
         salary: 32000,
-        joiningDate: new Date('2025-06-01')
+        joiningDate: new Date('2025-06-01'),
+        totalSales: 0,
+        commissionEarned: 0,
+        salaryStatus: 'Unpaid',
+        logs: [
+          { date: '2026-06-19', status: 'Present', checkInTime: '08:55', checkOutTime: '15:30', hoursWorked: 6.58, customersDealt: 8, salesGenerated: 0, notes: 'On-time Check-in' }
+        ]
       }
     ];
 

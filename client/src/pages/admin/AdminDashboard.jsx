@@ -32,7 +32,10 @@ import {
   MapPin, 
   Menu,
   CreditCard,
-  Check
+  Check,
+  Trophy,
+  Bell,
+  ClipboardList
 } from 'lucide-react';
 import { Bar, Pie } from 'react-chartjs-2';
 import { toast } from 'react-toastify';
@@ -109,6 +112,9 @@ const AdminDashboard = () => {
   // Modal control states
   const [employeeModalOpen, setEmployeeModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
+  const [selectedEmpLogs, setSelectedEmpLogs] = useState(null);
+  const [noticeContent, setNoticeContent] = useState('');
+  const [leaderboard, setLeaderboard] = useState([]);
   
   const [productModalOpen, setProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -116,6 +122,8 @@ const AdminDashboard = () => {
   // Form states - Employee
   const [empForm, setEmpForm] = useState({
     employeeId: '',
+    email: '',
+    password: 'password123',
     name: '',
     role: 'Salesperson',
     phoneNumber: '',
@@ -204,6 +212,14 @@ const AdminDashboard = () => {
           { _id: 'emp-3', employeeId: 'EMP103', name: 'Ayesha Bibi', role: 'Salesperson', phoneNumber: '+92 333 4567890', attendanceStatus: 'Leave', salary: 35000, joiningDate: '2025-05-01' },
           { _id: 'emp-4', employeeId: 'EMP104', name: 'Kamran Shah', role: 'Salesperson', phoneNumber: '+92 321 7654321', attendanceStatus: 'Absent', salary: 32000, joiningDate: '2025-06-01' }
         ]);
+      }
+
+      // Fetch Leaderboard
+      try {
+        const lbRes = await api.get('/employees/leaderboard');
+        setLeaderboard(lbRes.data.leaderboard || []);
+      } catch (err) {
+        console.warn('API fetch leaderboard failed:', err);
       }
 
       // 3. Fetch categories
@@ -307,10 +323,12 @@ const AdminDashboard = () => {
     setEditingEmployee(null);
     setEmpForm({
       employeeId: `EMP${101 + employees.length}`,
+      email: '',
+      password: 'password123',
       name: '',
       role: 'Salesperson',
       phoneNumber: '',
-      attendanceStatus: 'Present',
+      attendanceStatus: 'Absent',
       salary: '',
       joiningDate: new Date().toISOString().split('T')[0]
     });
@@ -321,6 +339,8 @@ const AdminDashboard = () => {
     setEditingEmployee(emp);
     setEmpForm({
       employeeId: emp.employeeId,
+      email: emp.email || '',
+      password: emp.password || '',
       name: emp.name,
       role: emp.role,
       phoneNumber: emp.phoneNumber,
@@ -333,8 +353,8 @@ const AdminDashboard = () => {
 
   const handleSaveEmployee = async (e) => {
     e.preventDefault();
-    if (!empForm.employeeId || !empForm.name || !empForm.phoneNumber || !empForm.salary) {
-      toast.error('All fields marked * are required');
+    if (!empForm.employeeId || !empForm.email || !empForm.name || !empForm.phoneNumber || !empForm.salary) {
+      toast.error('All fields marked * are required (including Email)');
       return;
     }
 
@@ -374,6 +394,33 @@ const AdminDashboard = () => {
       updateStatsLocal(updated);
       toast.info('Local employee cache updated.');
       setEmployeeModalOpen(false);
+    }
+  };
+
+  const handlePaySalary = async (empId) => {
+    try {
+      const response = await api.put(`/employees/${empId}/pay`);
+      if (response.data.success) {
+        toast.success('Salary released and marked as Paid!');
+        const updated = employees.map(emp => emp._id === empId ? response.data.employee : emp);
+        setEmployees(updated);
+      }
+    } catch (err) {
+      toast.error('Failed to release salary');
+    }
+  };
+
+  const handlePublishNotice = async (e) => {
+    e.preventDefault();
+    if (!noticeContent) return;
+    try {
+      const res = await api.post('/employees/notices', { content: noticeContent, author: 'Admin' });
+      if (res.data.success) {
+        toast.success('Notice published to Store Notice Board!');
+        setNoticeContent('');
+      }
+    } catch (err) {
+      toast.error('Failed to publish announcement');
     }
   };
 
@@ -1160,27 +1207,29 @@ const AdminDashboard = () => {
                 <table className="w-full text-sm text-left border-collapse">
                   <thead>
                     <tr className="border-b border-slate-800/80 text-[#94A3B8] font-bold uppercase text-xs tracking-wider">
-                      <th className="py-5 px-6">Employee ID</th>
+                      <th className="py-5 px-6">ID / Email</th>
                       <th className="py-5 px-6">Name</th>
                       <th className="py-5 px-6">Role</th>
                       <th className="py-5 px-6">Phone Number</th>
                       <th className="py-5 px-6">Attendance Status</th>
-                      <th className="py-5 px-6">Salary (Monthly)</th>
-                      <th className="py-5 px-6">Joining Date</th>
+                      <th className="py-5 px-6">Salary & Payroll</th>
                       <th className="py-5 px-6 text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredEmployees.length === 0 ? (
                       <tr>
-                        <td colSpan="8" className="py-12 text-center text-slate-500">
+                        <td colSpan="7" className="py-12 text-center text-slate-500">
                           No matching employee records found.
                         </td>
                       </tr>
                     ) : (
                       filteredEmployees.map(emp => (
                         <tr key={emp._id} className="border-b border-slate-900/50 hover:bg-slate-900/20 transition-colors">
-                          <td className="py-4.5 px-6 font-mono font-bold text-white">{emp.employeeId}</td>
+                          <td className="py-4.5 px-6">
+                            <span className="font-mono font-bold text-white block">{emp.employeeId}</span>
+                            <span className="text-[10px] text-slate-500 font-semibold block mt-0.5">{emp.email || 'No email registered'}</span>
+                          </td>
                           <td className="py-4.5 px-6 font-bold text-white">{emp.name}</td>
                           <td className="py-4.5 px-6">
                             <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${
@@ -1211,20 +1260,50 @@ const AdminDashboard = () => {
                               {emp.attendanceStatus}
                             </button>
                           </td>
-                          <td className="py-4.5 px-6 text-[#EC4899] font-black">{storeSettings.currencySymbol}{emp.salary?.toLocaleString()}</td>
-                          <td className="py-4.5 px-6 text-slate-400 font-medium">
-                            {emp.joiningDate ? new Date(emp.joiningDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '-'}
+                          <td className="py-4.5 px-6">
+                            <span className="text-[#EC4899] font-black block">{storeSettings.currencySymbol}{emp.salary?.toLocaleString()}</span>
+                            <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-black uppercase mt-1 border ${
+                              emp.salaryStatus === 'Paid' ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25' : 'bg-amber-500/15 text-amber-400 border-amber-500/25'
+                            }`}>
+                              {emp.salaryStatus || 'Unpaid'}
+                            </span>
                           </td>
                           <td className="py-4.5 px-6">
-                            <div className="flex items-center justify-center gap-2">
+                            <div className="flex items-center justify-center gap-1.5">
+                              {/* Work Logs Button */}
+                              <button 
+                                onClick={() => setSelectedEmpLogs(emp)}
+                                title="View Performance Logs"
+                                className="p-2 text-slate-400 hover:text-emerald-400 rounded-lg hover:bg-emerald-500/10 transition-colors"
+                              >
+                                <ClipboardList className="w-4.5 h-4.5" />
+                              </button>
+
+                              {/* Pay Salary Action */}
+                              {emp.salaryStatus !== 'Paid' ? (
+                                <button 
+                                  onClick={() => handlePaySalary(emp._id)}
+                                  title="Pay Monthly Salary"
+                                  className="p-2 text-slate-400 hover:text-amber-400 rounded-lg hover:bg-amber-500/10 transition-colors"
+                                >
+                                  <CreditCard className="w-4.5 h-4.5" />
+                                </button>
+                              ) : (
+                                <span className="p-2 text-emerald-400" title="Salary Paid">
+                                  <Check className="w-4.5 h-4.5 stroke-[3]" />
+                                </span>
+                              )}
+
                               <button 
                                 onClick={() => handleOpenEditEmployee(emp)}
+                                title="Edit Employee"
                                 className="p-2 text-slate-400 hover:text-indigo-400 rounded-lg hover:bg-indigo-500/10 transition-colors"
                               >
                                 <Edit3 className="w-4 h-4" />
                               </button>
                               <button 
                                 onClick={() => handleDeleteEmployee(emp._id)}
+                                title="Delete Employee"
                                 className="p-2 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-rose-500/10 transition-colors"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -1238,8 +1317,73 @@ const AdminDashboard = () => {
                 </table>
               </div>
             </div>
+
+            {/* Notice Board Publisher Form & Leaderboard Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+              
+              {/* Publisher Card */}
+              <div className="bg-[#0F172A]/40 border border-slate-800/80 rounded-[2rem] p-6 shadow-xl backdrop-blur-md space-y-4">
+                <h3 className="font-display font-extrabold text-white flex items-center gap-2 border-b border-slate-900 pb-3 text-base">
+                  <Bell className="w-5 h-5 text-indigo-400" />
+                  Publish Store Announcement
+                </h3>
+                <form onSubmit={handlePublishNotice} className="space-y-4 text-left">
+                  <div className="space-y-2">
+                    <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Announcement Message</label>
+                    <textarea
+                      required
+                      placeholder="Write message here for the Store Notice Board..."
+                      value={noticeContent}
+                      onChange={(e) => setNoticeContent(e.target.value)}
+                      className="w-full min-h-24 px-4 py-3 bg-slate-950/50 border border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-sm text-white font-medium placeholder-slate-600"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer"
+                  >
+                    Broadcast Announcement
+                  </button>
+                </form>
+              </div>
+
+              {/* Commissions Leaderboard */}
+              <div className="bg-[#0F172A]/40 border border-slate-800/80 rounded-[2rem] p-6 shadow-xl backdrop-blur-md space-y-4">
+                <h3 className="font-display font-extrabold text-white flex items-center gap-2 border-b border-slate-900 pb-3 text-base">
+                  <Trophy className="w-5 h-5 text-amber-400" />
+                  Staff Sales Leaderboard
+                </h3>
+                <div className="space-y-2.5 max-h-52 overflow-y-auto pr-2">
+                  {leaderboard.length === 0 ? (
+                    <div className="text-center text-xs text-slate-500 py-6">No sales stats recorded.</div>
+                  ) : (
+                    leaderboard.map((user, idx) => (
+                      <div key={user._id || idx} className="flex justify-between items-center bg-slate-950/20 border border-slate-900/40 p-3 rounded-xl">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black shrink-0 ${
+                            idx === 0 ? 'bg-amber-400/20 text-amber-400 border border-amber-500/20' :
+                            idx === 1 ? 'bg-slate-400/20 text-slate-350 border border-slate-400/20' :
+                            'bg-slate-900 text-slate-500'
+                          }`}>
+                            {idx + 1}
+                          </span>
+                          <div className="min-w-0">
+                            <span className="font-extrabold text-xs text-white block truncate">{user.name}</span>
+                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block mt-0.5">{user.role}</span>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="font-black text-xs text-emerald-400 block">${user.totalSales?.toLocaleString()}</span>
+                          <span className="text-[8px] text-indigo-400 font-semibold tracking-wider uppercase">Comm: ${user.commissionEarned?.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
           </div>
-        )}
+        </div>
+      )}
 
         {/* ---------------------------------------------------- */}
         {/* TAB CONTENT: STOCK/INVENTORY */}
@@ -1752,6 +1896,32 @@ const AdminDashboard = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
+                    <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Email Address *</label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="e.g. sahu@smartbazaar.com"
+                      value={empForm.email}
+                      onChange={(e) => setEmpForm({ ...empForm, email: e.target.value })}
+                      className="w-full px-4 py-2.5 bg-slate-950/50 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-sm font-medium text-white transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Login Password *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. password123"
+                      value={empForm.password}
+                      onChange={(e) => setEmpForm({ ...empForm, password: e.target.value })}
+                      className="w-full px-4 py-2.5 bg-slate-950/50 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-sm font-medium text-white transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
                     <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Phone Number *</label>
                     <input
                       type="text"
@@ -2090,6 +2260,90 @@ const AdminDashboard = () => {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ---------------------------------------------------- */}
+      {/* MODAL: EMPLOYEE WORK LOGS */}
+      {/* ---------------------------------------------------- */}
+      <AnimatePresence>
+        {selectedEmpLogs && (
+          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl shadow-2xl p-8 space-y-6 relative text-left"
+            >
+              <button 
+                onClick={() => setSelectedEmpLogs(null)}
+                className="absolute top-6 right-6 p-2 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="space-y-1.5">
+                <h3 className="font-display font-extrabold text-2xl text-white flex items-center gap-2">
+                  <ClipboardList className="w-6 h-6 text-indigo-500" />
+                  Work & Attendance Logs: <span className="text-[#6366F1]">{selectedEmpLogs.name}</span>
+                </h3>
+                <p className="text-slate-400 text-xs font-light">History of check-in, check-out, deals and sales generated.</p>
+              </div>
+
+              <div className="bg-slate-950/40 border border-slate-850 rounded-2xl overflow-hidden max-h-96 overflow-y-auto">
+                <table className="w-full text-xs text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-950/80 border-b border-slate-850 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
+                      <th className="py-3 px-4">Date</th>
+                      <th className="py-3 px-4">Status</th>
+                      <th className="py-3 px-4">Check-In</th>
+                      <th className="py-3 px-4">Check-Out</th>
+                      <th className="py-3 px-4">Worked Hrs</th>
+                      <th className="py-3 px-4 text-center">Deals</th>
+                      <th className="py-3 px-4 text-right">Sales</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {!selectedEmpLogs.logs || selectedEmpLogs.logs.length === 0 ? (
+                      <tr>
+                        <td colSpan="7" className="py-12 text-center text-slate-500 font-medium">No past attendance logs found.</td>
+                      </tr>
+                    ) : (
+                      selectedEmpLogs.logs.map((log, idx) => (
+                        <tr key={idx} className="border-b border-slate-900 hover:bg-slate-900/10 transition-colors">
+                          <td className="py-3 px-4 font-mono text-slate-350">{log.date}</td>
+                          <td className="py-3 px-4">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase border ${
+                              log.status === 'Full Shift' ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25' :
+                              log.status === 'Present' ? 'bg-teal-500/15 text-teal-400 border-teal-500/25' :
+                              log.status === 'Half Leave' ? 'bg-amber-500/15 text-amber-400 border-amber-500/25' :
+                              'bg-rose-500/15 text-rose-400 border-rose-500/25'
+                            }`}>
+                              {log.status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 font-mono font-medium text-white">{log.checkInTime || '-'}</td>
+                          <td className="py-3 px-4 font-mono font-medium text-white">{log.checkOutTime || '-'}</td>
+                          <td className="py-3 px-4 font-mono font-bold text-indigo-400">{log.hoursWorked ? `${log.hoursWorked} hrs` : '-'}</td>
+                          <td className="py-3 px-4 text-center text-slate-350 font-medium">{log.customersDealt}</td>
+                          <td className="py-3 px-4 text-right text-emerald-400 font-black">${log.salesGenerated?.toLocaleString()}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  onClick={() => setSelectedEmpLogs(null)}
+                  className="py-2.5 px-6 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                >
+                  Close Logs
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
