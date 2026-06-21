@@ -10,6 +10,20 @@ const Navbar = () => {
   const { cartItems } = useCart();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [storeName, setStoreName] = useState(localStorage.getItem('smart_inventory_name') || 'Smart Inventory');
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setStoreName(localStorage.getItem('smart_inventory_name') || 'Smart Inventory');
+    };
+    window.addEventListener('storage', handleStorageChange);
+    // Listen to local custom event since standard storage event only fires in other tabs
+    window.addEventListener('local-storage-update', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('local-storage-update', handleStorageChange);
+    };
+  }, []);
 
   const totalCartQty = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -27,7 +41,7 @@ const Navbar = () => {
           {/* Logo */}
           <div className="flex-shrink-0 flex items-center">
             <Link to="/" className="font-display font-extrabold text-2xl tracking-tight text-indigo-600 flex items-center gap-2">
-              Smart<span className="text-slate-900">Inventory</span>
+              {storeName.split(' ')[0]}<span className="text-slate-900">{storeName.split(' ').slice(1).join(' ') || 'Inventory'}</span>
             </Link>
           </div>
 

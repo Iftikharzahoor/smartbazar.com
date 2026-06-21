@@ -3,6 +3,7 @@ import Product from '../models/Product.js';
 import Cart from '../models/Cart.js';
 import Coupon from '../models/Coupon.js';
 import User from '../models/User.js';
+import Employee from '../models/Employee.js';
 import { ErrorResponse } from '../middleware/errorHandler.js';
 
 // @desc    Create new order
@@ -371,6 +372,15 @@ export const getOrderSummary = async (req, res, next) => {
     const totalProducts = await Product.countDocuments({ isActive: true });
     const totalUsers = await User.countDocuments();
 
+    // Calculate dynamic stock levels
+    const inStockCount = await Product.countDocuments({ stock: { $gt: 10 }, isActive: true });
+    const outOfStockCount = await Product.countDocuments({ stock: 0, isActive: true });
+    const lowStockCount = await Product.countDocuments({ stock: { $gt: 0, $lte: 10 }, isActive: true });
+
+    // Calculate employee metrics
+    const totalEmployees = await Employee.countDocuments();
+    const presentEmployees = await Employee.countDocuments({ attendanceStatus: 'Present' });
+
     // Sum overall revenues from paid e-commerce orders
     const salesData = await Order.aggregate([
       { $match: { isPaid: true } },
@@ -414,6 +424,11 @@ export const getOrderSummary = async (req, res, next) => {
       totalOrders,
       totalProducts,
       totalUsers,
+      inStockCount,
+      outOfStockCount,
+      lowStockCount,
+      totalEmployees,
+      presentEmployees,
       monthlySales,
       statusData,
       recentOrders,

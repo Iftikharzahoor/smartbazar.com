@@ -106,6 +106,11 @@ const ProductSchema = new mongoose.Schema({
       message: 'Stock must be an integer'
     }
   },
+  supplier: {
+    type: String,
+    required: [true, 'Please add supplier details'],
+    default: 'Sahu Distribution Corp'
+  },
   sold: {
     type: Number,
     default: 0

@@ -9,6 +9,7 @@ import Product from '../models/Product.js';
 import Category from '../models/Category.js';
 import Coupon from '../models/Coupon.js';
 import Order from '../models/Order.js';
+import Employee from '../models/Employee.js';
 
 // Load environment variables
 dotenv.config();
@@ -40,6 +41,7 @@ const seedDB = async () => {
     await Category.deleteMany();
     await Coupon.deleteMany();
     await Order.deleteMany();
+    await Employee.deleteMany();
     console.log('Cleaned old collections data successfully.');
 
     // 3. Seed Categories
@@ -1425,6 +1427,49 @@ const seedDB = async () => {
 
     await Order.create(ordersData);
     console.log('Orders seeded successfully.');
+
+    // Seed Employees
+    const employeesData = [
+      {
+        employeeId: 'EMP101',
+        name: 'Sahu Ahmed',
+        role: 'Manager',
+        phoneNumber: '+92 300 1234567',
+        attendanceStatus: 'Present',
+        salary: 75000,
+        joiningDate: new Date('2025-01-15')
+      },
+      {
+        employeeId: 'EMP102',
+        name: 'Zeeshan Khan',
+        role: 'Cashier',
+        phoneNumber: '+92 312 9876543',
+        attendanceStatus: 'Present',
+        salary: 45000,
+        joiningDate: new Date('2025-03-10')
+      },
+      {
+        employeeId: 'EMP103',
+        name: 'Ayesha Bibi',
+        role: 'Salesperson',
+        phoneNumber: '+92 333 4567890',
+        attendanceStatus: 'Leave',
+        salary: 35000,
+        joiningDate: new Date('2025-05-01')
+      },
+      {
+        employeeId: 'EMP104',
+        name: 'Kamran Shah',
+        role: 'Salesperson',
+        phoneNumber: '+92 321 7654321',
+        attendanceStatus: 'Absent',
+        salary: 32000,
+        joiningDate: new Date('2025-06-01')
+      }
+    ];
+
+    await Employee.create(employeesData);
+    console.log('Employees seeded successfully.');
 
     console.log('All collections seeded flawlessly. Exiting...');
     mongoose.connection.close();
