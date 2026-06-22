@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth.js';
 import { useCart } from '../hooks/useCart.js';
@@ -50,7 +50,6 @@ const Navbar = () => {
             <Link to="/" className="text-slate-600 hover:text-indigo-600 font-medium transition-colors">Home</Link>
             <Link to="/products" className="text-slate-600 hover:text-indigo-600 font-medium transition-colors">Catalog</Link>
             <Link to="/about" className="text-slate-600 hover:text-indigo-600 font-medium transition-colors">About Us</Link>
-            <Link to="/employee/login" className="text-slate-600 hover:text-indigo-600 font-medium transition-colors">Employee Portal</Link>
           </div>
 
           {/* Action Icons - Desktop */}
@@ -171,13 +170,6 @@ const Navbar = () => {
             className="block text-slate-700 font-medium hover:text-indigo-600"
           >
             Catalog
-          </Link>
-          <Link
-            to="/employee/login"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block text-slate-700 font-medium hover:text-indigo-600"
-          >
-            Employee Portal
           </Link>
           <Link
             to="/cart"

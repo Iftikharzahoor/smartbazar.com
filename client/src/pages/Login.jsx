@@ -40,9 +40,6 @@ const Login = () => {
       setEmail('zahooriftikhar296@gmail.com');
       setPassword('admin12345');
       toast.info('Autofilled seeded Administrator credentials!');
-    } else if (type === 'employee') {
-      navigate('/employee/login?autofill=employee');
-      toast.info('Redirecting to Employee Portal with Cashier credentials!');
     } else {
       setEmail('fatima@shopmern.com');
       setPassword('customer12345');
@@ -149,13 +146,6 @@ const Login = () => {
             >
               <UserCheck className="w-3.5 h-3.5 text-[#6366F1]" />
               Admin
-            </button>
-            <button
-              onClick={() => fillCredentials('employee')}
-              className="py-2.5 px-2 bg-white/5 border border-white/10 text-[11px] font-semibold text-white/95 rounded-xl hover:bg-white/10 hover:border-white/20 transition-all flex items-center justify-center gap-1.5 focus:outline-none cursor-pointer"
-            >
-              <UserCheck className="w-3.5 h-3.5 text-[#10B981]" />
-              Employee
             </button>
           </div>
         </div>

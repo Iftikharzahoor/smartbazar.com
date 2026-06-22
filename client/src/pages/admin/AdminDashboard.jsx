@@ -106,6 +106,10 @@ const AdminDashboard = () => {
   const [orderSearch, setOrderSearch] = useState('');
   const [orderStatusFilter, setOrderStatusFilter] = useState('All');
 
+  // Search & Filter states - Payments
+  const [paymentSearch, setPaymentSearch] = useState('');
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState('All');
+
   // Search & Filter states - Users
   const [userSearch, setUserSearch] = useState('');
 
@@ -158,6 +162,7 @@ const AdminDashboard = () => {
     if (path === '/admin/employees') return 'employees';
     if (path === '/admin/products') return 'stock';
     if (path === '/admin/orders') return 'orders';
+    if (path === '/admin/payments') return 'payments';
     if (path === '/admin/users') return 'users';
     if (path === '/admin/settings') return 'settings';
     return 'overview';
@@ -260,9 +265,9 @@ const AdminDashboard = () => {
       } catch (err) {
         console.warn('API fetch orders failed. Loading mock orders list:', err);
         setOrders([
-          { _id: 'o-101', user: { name: 'John Doe', email: 'customer@shopmern.com' }, totalPrice: 249.99, status: 'processing', isPaid: true, createdAt: new Date().toISOString() },
-          { _id: 'o-102', user: { name: 'Alice Smith', email: 'alice@shopmern.com' }, totalPrice: 1199.99, status: 'delivered', isPaid: true, createdAt: new Date().toISOString() },
-          { _id: 'o-103', user: { name: 'Bob Johnson', email: 'bob@shopmern.com' }, totalPrice: 189.99, status: 'pending', isPaid: false, createdAt: new Date().toISOString() }
+          { _id: 'o-101', user: { name: 'John Doe', email: 'customer@shopmern.com' }, totalPrice: 249.99, status: 'processing', isPaid: true, paymentMethod: 'stripe', paidAt: new Date().toISOString(), createdAt: new Date().toISOString() },
+          { _id: 'o-102', user: { name: 'Alice Smith', email: 'alice@shopmern.com' }, totalPrice: 1199.99, status: 'delivered', isPaid: true, paymentMethod: 'paypal', paidAt: new Date().toISOString(), createdAt: new Date().toISOString() },
+          { _id: 'o-103', user: { name: 'Bob Johnson', email: 'bob@shopmern.com' }, totalPrice: 189.99, status: 'pending', isPaid: false, paymentMethod: 'cod', createdAt: new Date().toISOString() }
         ]);
       }
 
@@ -749,6 +754,14 @@ const AdminDashboard = () => {
     return matchesSearch && matchesStatus;
   });
 
+  const filteredPayments = orders.filter(order => {
+    const matchesSearch = order._id.toLowerCase().includes(paymentSearch.toLowerCase()) ||
+                          (order.user?.name && order.user.name.toLowerCase().includes(paymentSearch.toLowerCase())) ||
+                          (order.user?.email && order.user.email.toLowerCase().includes(paymentSearch.toLowerCase()));
+    const matchesMethod = paymentMethodFilter === 'All' || order.paymentMethod === paymentMethodFilter;
+    return matchesSearch && matchesMethod;
+  });
+
   const filteredUsers = usersList.filter(u => {
     return u.name.toLowerCase().includes(userSearch.toLowerCase()) ||
            u.email.toLowerCase().includes(userSearch.toLowerCase());
@@ -811,6 +824,7 @@ const AdminDashboard = () => {
     { id: 'employees', name: 'Employee Records', icon: Users, path: '/admin/employees' },
     { id: 'stock', name: 'Stock & Inventory', icon: Boxes, path: '/admin/products' },
     { id: 'orders', name: 'Orders Console', icon: FileText, path: '/admin/orders' },
+    { id: 'payments', name: 'Payments History', icon: CreditCard, path: '/admin/payments' },
     { id: 'users', name: 'Users Registry', icon: Shield, path: '/admin/users' },
     { id: 'settings', name: 'System Settings', icon: Settings, path: '/admin/settings' }
   ];
@@ -921,14 +935,16 @@ const AdminDashboard = () => {
               {activeTab === 'employees' && 'Employee Records'}
               {activeTab === 'stock' && 'Stock & Inventory Management'}
               {activeTab === 'orders' && 'Orders Console'}
+              {activeTab === 'payments' && 'Customer Payments Ledger'}
               {activeTab === 'users' && 'Users Registry'}
               {activeTab === 'settings' && 'Console System Settings'}
             </h1>
-            <p className="text-[#94A3B8] text-sm font-light">
+            <p className="text-xs text-slate-500 font-bold tracking-wider mt-1">
               {activeTab === 'overview' && 'Oversee store KPIs, operational distributions, recent sales and inventory alerts.'}
               {activeTab === 'employees' && 'Manage shop administrators, cashier shift accounts, sales reps and attendance logs.'}
               {activeTab === 'stock' && 'Track product stock deficits, supplier contact links, and edit catalog products.'}
               {activeTab === 'orders' && 'Monitor billing transactions, ship packaging logs and change order statuses.'}
+              {activeTab === 'payments' && 'Track online payments, credit card transactions, cash-on-delivery logs and update billing statuses.'}
               {activeTab === 'users' && 'Promote customer accounts to system administrator credentials.'}
               {activeTab === 'settings' && 'Configure custom store parameters, currencies, low stock counts threshold and contact.'}
             </p>
@@ -1654,6 +1670,126 @@ const AdminDashboard = () => {
                                 </button>
                               )}
                             </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ---------------------------------------------------- */}
+        {/* TAB CONTENT: PAYMENTS */}
+        {/* ---------------------------------------------------- */}
+        {activeTab === 'payments' && (
+          <div className="space-y-6">
+            
+            {/* Filter & Search Bar */}
+            <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 bg-[#0F172A]/30 border border-slate-900/60 p-5 rounded-3xl backdrop-blur-sm">
+              <div className="flex flex-col sm:flex-row flex-grow gap-3 max-w-2xl">
+                {/* Search */}
+                <div className="relative flex-grow">
+                  <Search className="absolute left-4 top-3.5 w-4 h-4 text-slate-500" />
+                  <input
+                    type="text"
+                    placeholder="Search payments by Customer Name, Email, or Transaction ID..."
+                    value={paymentSearch}
+                    onChange={(e) => setPaymentSearch(e.target.value)}
+                    className="w-full pl-11 pr-4 py-3 bg-slate-950/50 border border-slate-800/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-sm text-white font-medium"
+                  />
+                </div>
+
+                {/* Method Filter */}
+                <div className="relative min-w-48">
+                  <select
+                    value={paymentMethodFilter}
+                    onChange={(e) => setPaymentMethodFilter(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-950/50 border border-slate-800/80 rounded-2xl focus:outline-none text-sm text-white font-medium appearance-none"
+                  >
+                    <option value="All">All Payment Methods</option>
+                    <option value="stripe">Online (Stripe)</option>
+                    <option value="paypal">Online (PayPal)</option>
+                    <option value="cod">Cash on Delivery (COD)</option>
+                  </select>
+                  <ChevronDown className="absolute right-4 top-4 w-4 h-4 text-slate-500 pointer-events-none" />
+                </div>
+              </div>
+            </div>
+
+            {/* Table Container */}
+            <div className="bg-[#0F172A]/40 border border-slate-800/80 rounded-[2rem] overflow-hidden shadow-xl backdrop-blur-md">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-800/80 text-[#94A3B8] font-bold uppercase text-xs tracking-wider">
+                      <th className="py-5 px-6">Customer Details</th>
+                      <th className="py-5 px-6">Order ID</th>
+                      <th className="py-5 px-6">Payment Method</th>
+                      <th className="py-5 px-6">Amount</th>
+                      <th className="py-5 px-6">Payment Date</th>
+                      <th className="py-5 px-6">Status</th>
+                      <th className="py-5 px-6 text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredPayments.length === 0 ? (
+                      <tr>
+                        <td colSpan="7" className="py-12 text-center text-slate-500">
+                          No matching payment records found.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredPayments.map(order => (
+                        <tr key={order._id} className="border-b border-slate-900/50 hover:bg-slate-900/20 transition-colors">
+                          <td className="py-4.5 px-6">
+                            <span className="font-bold text-white block">{order.user?.name || 'Guest User'}</span>
+                            <span className="text-xs text-slate-400 block">{order.user?.email || 'N/A'}</span>
+                          </td>
+                          <td className="py-4.5 px-6 font-mono font-bold text-white text-xs">{order._id}</td>
+                          <td className="py-4.5 px-6">
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                              order.paymentMethod === 'stripe' ? 'bg-[#6366F1]/10 text-[#6366F1] border border-[#6366F1]/20' :
+                              order.paymentMethod === 'paypal' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' :
+                              'bg-sky-500/10 text-sky-400 border border-sky-500/20'
+                            }`}>
+                              <CreditCard className="w-3 h-3" />
+                              {order.paymentMethod === 'stripe' ? 'Online (Stripe)' :
+                               order.paymentMethod === 'paypal' ? 'Online (PayPal)' : 'COD (Cash)'}
+                            </span>
+                          </td>
+                          <td className="py-4.5 px-6 text-[#EC4899] font-black">{storeSettings.currencySymbol}{order.totalPrice?.toFixed(2)}</td>
+                          <td className="py-4.5 px-6 text-slate-300 font-medium">
+                            {order.paidAt ? new Date(order.paidAt).toLocaleDateString() : 'N/A'}
+                          </td>
+                          <td className="py-4.5 px-6">
+                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-bold ${
+                              order.isPaid 
+                                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25' 
+                                : 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
+                            }`}>
+                              {order.isPaid ? 'PAID' : 'UNPAID'}
+                            </span>
+                          </td>
+                          <td className="py-4.5 px-6 text-center">
+                            {!order.isPaid && (
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await api.put(`/orders/${order._id}/pay`);
+                                    toast.success('Order payment marked as PAID successfully!');
+                                    loadAllData();
+                                  } catch (err) {
+                                    toast.error('Failed to update payment status.');
+                                  }
+                                }}
+                                className="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/30 rounded-xl text-xs font-bold transition-all"
+                              >
+                                Mark Paid
+                              </button>
+                            )}
                           </td>
                         </tr>
                       ))
